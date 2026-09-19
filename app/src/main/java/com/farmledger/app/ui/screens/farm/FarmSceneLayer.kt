@@ -63,7 +63,10 @@ fun FarmSceneLayer(
         nowMs = System.currentTimeMillis()
     }
 
-    val grass = ImageBitmap.imageResource(R.drawable.tile_grass)
+    val grassBarren = ImageBitmap.imageResource(R.drawable.tile_grass_barren)
+    val grassSprout = ImageBitmap.imageResource(R.drawable.tile_grass_sprout)
+    val grassHome = ImageBitmap.imageResource(R.drawable.tile_grass_home)
+    val grassThrive = ImageBitmap.imageResource(R.drawable.tile_grass_thrive)
     val dirt = ImageBitmap.imageResource(R.drawable.tile_dirt)
     val path = ImageBitmap.imageResource(R.drawable.tile_path)
     val edgeN = ImageBitmap.imageResource(R.drawable.tile_dirt_edge_n)
@@ -76,6 +79,7 @@ fun FarmSceneLayer(
     val cornerSw = ImageBitmap.imageResource(R.drawable.fence_corner_sw)
     val cornerSe = ImageBitmap.imageResource(R.drawable.fence_corner_se)
     val hut = ImageBitmap.imageResource(R.drawable.building_hut)
+    val hutRuin = ImageBitmap.imageResource(R.drawable.building_hut_ruin)
     val treeOak = ImageBitmap.imageResource(R.drawable.tree_oak)
     val treePine = ImageBitmap.imageResource(R.drawable.tree_pine)
     val treeShadow = ImageBitmap.imageResource(R.drawable.tree_shadow)
@@ -83,6 +87,13 @@ fun FarmSceneLayer(
     val petIdle = ImageBitmap.imageResource(R.drawable.pet_idle)
     val petHappy = ImageBitmap.imageResource(R.drawable.pet_happy)
     val heart = ImageBitmap.imageResource(R.drawable.fx_heart)
+
+    val stageGrass = when {
+        capabilities.greenerDenser -> grassThrive
+        capabilities.showHut -> grassHome
+        capabilities.showGrassEdges -> grassSprout
+        else -> grassBarren
+    }
 
     BoxWithConstraints(
         modifier
@@ -102,11 +113,11 @@ fun FarmSceneLayer(
                 drawPixelTile(bmp, lx * sx, ly * sy, lw * sx, lh * sy)
             }
 
-            // Layer 0 — ground: barren = mostly dirt; sprout+ = grass fill
+            // Layer 0 — ground: stage grass differential (barren sparsest → thrive densest)
             if (capabilities.showGrassEdges || capabilities.greenerDenser) {
                 for (ty in 0 until 3) {
                     for (tx in 0 until 5) {
-                        cell(tx, ty, grass)
+                        cell(tx, ty, stageGrass)
                     }
                 }
                 if (capabilities.greenerDenser) {
@@ -115,10 +126,11 @@ fun FarmSceneLayer(
                     decor(bush, 100f, 8f, 22f, 18f)
                 }
             } else {
-                // 荒地：dirt dominate
+                // 荒地：dirt dominate + sparse barren grass corners
                 for (ty in 0 until 3) {
                     for (tx in 0 until 5) {
-                        cell(tx, ty, dirt)
+                        val corner = (tx == 0 || tx == 4) && (ty == 0 || ty == 2)
+                        cell(tx, ty, if (corner) stageGrass else dirt)
                     }
                 }
             }
@@ -160,6 +172,9 @@ fun FarmSceneLayer(
             }
             if (capabilities.showHut) {
                 decor(hut, 2f, 48f, 48f, 48f)
+            } else if (!capabilities.showGrassEdges) {
+                // 荒地殘破屋 stub（純視覺，無獎勵）
+                decor(hutRuin, 2f, 48f, 48f, 48f)
             }
             // Placed decor hint (scarecrow etc. as bush stand-in if placed)
             if (placedDecorIds.isNotEmpty() && capabilities.decorSlots > 0) {

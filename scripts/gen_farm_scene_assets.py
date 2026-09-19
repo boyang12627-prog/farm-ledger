@@ -668,6 +668,262 @@ def tree_shadow() -> Image.Image:
     return img
 
 
+
+# --- Stage ground differentials (barren → thrive) ---------------------------
+
+def tile_grass_barren() -> Image.Image:
+    """Mostly warm mud with sparse sage patches — 荒地 feel."""
+    img = new_img()
+    fill_warm_mud(img)
+    # sparse grass islands (not a full lawn)
+    patches = [
+        (3, 4, 5, 3), (18, 6, 4, 3), (8, 20, 5, 3),
+        (22, 22, 4, 3), (12, 12, 3, 2), (26, 3, 3, 2),
+    ]
+    for x0, y0, w, h in patches:
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                if (x * 3 + y * 5) % 4 == 0:
+                    continue  # leave mud holes
+                n = (x + y) % 3
+                c = SAGE if n == 0 else (LGREEN if n == 1 else MGREEN)
+                px(img, x, y, c)
+    # cracked / dry ticks
+    for x, y in [(10, 9), (11, 9), (20, 16), (21, 16), (6, 27), (15, 3)]:
+        px(img, x, y, OUTLINE)
+    return img
+
+
+def tile_grass_sprout() -> Image.Image:
+    """Mud + strong grass fringe feel — 萌芽田格感 (edge-heavy lawn)."""
+    img = tile_grass()
+    # strengthen plot-grid feel: lighter furrow-like lines
+    for y in (0, 31):
+        for x in range(32):
+            if x % 3 != 1:
+                px(img, x, y, MGREEN if y == 0 else DGREEN)
+    for x in (0, 31):
+        for y in range(32):
+            if y % 3 != 1:
+                px(img, x, y, MGREEN if x == 0 else DGREEN)
+    # mud corner crumbs so beds feel tilled nearby
+    for x, y in [(2, 2), (3, 2), (28, 28), (29, 29), (2, 29), (29, 2)]:
+        px(img, x, y, SOIL_M)
+    return img
+
+
+def tile_grass_home() -> Image.Image:
+    """Settled lawn — same as base grass with a few cream flower dots."""
+    img = tile_grass()
+    for x, y in [(6, 12), (15, 5), (24, 18), (11, 24), (20, 10)]:
+        px(img, x, y, CREAM)
+        if y > 0:
+            px(img, x, y - 1, GOLD if (x + y) % 2 else PINK)
+    return img
+
+
+def tile_grass_thrive() -> Image.Image:
+    """Denser / greener canopy lawn — 旺場."""
+    img = new_img()
+    for y in range(32):
+        for x in range(32):
+            n = (x * 3 + y * 5) % 7
+            if n <= 1:
+                c = MGREEN
+            elif n <= 3:
+                c = SAGE
+            elif n == 4:
+                c = DGREEN
+            else:
+                c = LGREEN if ((x + y) % 2 == 0) else SAGE
+            if (y // 3) % 2 == 0 and n == 5:
+                c = DGREEN
+            px(img, x, y, c)
+    blades = [
+        (3, 5, DGREEN), (4, 4, LGREEN), (11, 9, DGREEN), (12, 8, SAGE),
+        (19, 3, DGREEN), (20, 2, LGREEN), (6, 17, DGREEN), (7, 16, SAGE),
+        (15, 21, DGREEN), (16, 20, LGREEN), (24, 13, DGREEN), (25, 12, SAGE),
+        (27, 25, DGREEN), (9, 27, LGREEN), (21, 27, DGREEN), (2, 23, SAGE),
+        (14, 14, DGREEN), (28, 8, SAGE), (8, 11, LGREEN), (17, 6, DGREEN),
+    ]
+    for x, y, c in blades:
+        px(img, x, y, c)
+        if y > 0:
+            px(img, x, y - 1, LGREEN if c == DGREEN else SAGE)
+    for x, y in [(8, 7), (17, 15), (26, 6), (13, 26), (4, 13), (22, 22)]:
+        px(img, x, y, SAND)
+    return img
+
+
+def building_hut_ruin() -> Image.Image:
+    """Broken hut stub 48×48 — 荒地殘破感 (optional decor)."""
+    img = new_img(48, 48)
+    # rubble shadow
+    for y in range(38, 44):
+        for x in range(12, 36):
+            if abs(x - 24) + abs(y - 40) * 2 <= 14:
+                px(img, x, y, (0x3D, 0x2A, 0x18, 100))
+    # crumbled wall stubs
+    fill_rect(img, 14, 30, 33, 40, WALL_D)
+    fill_rect(img, 14, 30, 15, 40, WOOD_D)
+    fill_rect(img, 32, 30, 33, 40, WOOD_D)
+    fill_rect(img, 14, 38, 33, 40, WOOD)
+    # broken roof remnant (asymmetric)
+    for row in range(0, 10):
+        half = 1 + row
+        y = 18 + row
+        x0 = 24 - half
+        x1 = 20 + half  # collapsed right side
+        if x1 < x0:
+            continue
+        c = ROOF_D if row > 5 else ROOF
+        fill_rect(img, x0, y, min(x1, 30), y, c)
+        px(img, x0 - 1, y, DECOR_OUTLINE)
+    # scattered bricks / stones
+    for x, y in [(18, 36), (19, 36), (28, 34), (29, 35), (22, 41), (12, 39)]:
+        px(img, x, y, STONE if (x + y) % 2 else BRICK)
+    rect_outline(img, 14, 30, 33, 40, DECOR_OUTLINE)
+    # gap in wall (ruin hole)
+    fill_rect(img, 22, 32, 26, 37, SOIL_M)
+    return img
+
+
+def _paste(canvas, sprite, xy):
+    canvas.paste(sprite, xy, sprite)
+
+
+def stage_scene(stage: str) -> Image.Image:
+    """160×96 full scene matching FarmSceneLayer stage gating."""
+    W, H = 160, 96
+    canvas = Image.new("RGBA", (W, H), SKY)
+    dirt = tile_dirt()
+    path = tile_path()
+    edge_n = tile_dirt_edge("n")
+    edge_w = tile_dirt_edge("w")
+    edge_e = tile_dirt_edge("e")
+    fh = fence_h()
+    fv = fence_v()
+    fc_nw, fc_ne = fence_corner("nw"), fence_corner("ne")
+    fc_sw, fc_se = fence_corner("sw"), fence_corner("se")
+    hut = building_hut()
+    ruin = building_hut_ruin()
+    oak, pine = tree_oak(), tree_pine()
+    bush_img = bush()
+    shadow = tree_shadow()
+    pet = pet_idle()
+    pet2 = pet_happy()
+
+    grass_map = {
+        "barren": tile_grass_barren(),
+        "sprout": tile_grass_sprout(),
+        "home": tile_grass_home(),
+        "thrive": tile_grass_thrive(),
+    }
+    ground = grass_map[stage]
+
+    # Layer 0 — ground
+    if stage == "barren":
+        for ty in range(3):
+            for tx in range(5):
+                # mostly dirt; sprinkle barren grass on corners
+                if (tx, ty) in ((0, 0), (4, 0), (0, 2), (4, 2)):
+                    _paste(canvas, ground, (tx * 32, ty * 32))
+                else:
+                    _paste(canvas, dirt, (tx * 32, ty * 32))
+    else:
+        for ty in range(3):
+            for tx in range(5):
+                _paste(canvas, ground, (tx * 32, ty * 32))
+
+    _paste(canvas, path, (64, 0))
+    _paste(canvas, path, (64, 64))
+    _paste(canvas, edge_w, (32, 32))
+    _paste(canvas, dirt, (64, 32))
+    _paste(canvas, edge_e, (96, 32))
+    if stage != "barren":
+        for tx in (1, 2, 3):
+            for y in range(8):
+                for x in range(32):
+                    p = edge_n.getpixel((x, y))
+                    if p[3] > 0:
+                        canvas.putpixel((tx * 32 + x, 32 + y), p)
+
+    # Fence — home+
+    if stage in ("home", "thrive"):
+        _paste(canvas, fc_nw, (20, 18))
+        _paste(canvas, fh, (48, 18))
+        _paste(canvas, fh, (80, 18))
+        _paste(canvas, fc_ne, (108, 18))
+        _paste(canvas, fv, (20, 34))
+        _paste(canvas, fv, (116, 34))
+        _paste(canvas, fc_sw, (20, 50))
+        _paste(canvas, fh, (48, 54))
+        _paste(canvas, fh, (80, 54))
+        _paste(canvas, fc_se, (108, 50))
+
+    # Trees / hut
+    if stage == "barren":
+        _paste(canvas, ruin, (2, 48))
+    if stage in ("home", "thrive"):
+        _paste(canvas, shadow, (-4, 28))
+        _paste(canvas, pine, (-4, 0))
+        _paste(canvas, hut, (2, 48))
+    if stage == "thrive":
+        _paste(canvas, shadow, (128, 24))
+        _paste(canvas, oak, (128, -4))
+        _paste(canvas, bush_img, (4, 4))
+        _paste(canvas, bush_img, (100, 8))
+        _paste(canvas, bush_img, (118, 70))
+    elif stage == "home":
+        _paste(canvas, bush_img, (118, 70))
+
+    # Pets — sprout+ 1; thrive animal2 hint at day21 shown as thrive with 2
+    if stage in ("sprout", "home", "thrive"):
+        _paste(canvas, pet if stage != "thrive" else pet2, (64, 62))
+    if stage == "thrive":
+        # second animal slot placeholder (slightly smaller feel via crop offset)
+        _paste(canvas, pet, (100, 66))
+
+    return canvas
+
+
+def farm_stages_preview() -> Image.Image:
+    """2×2 comparison: barren / sprout / home / thrive — docs review."""
+    labels = [("barren", "荒地"), ("sprout", "萌芽"), ("home", "安家"), ("thrive", "旺場")]
+    cell_w, cell_h = 160, 96
+    pad = 8
+    label_h = 14
+    cols, rows = 2, 2
+    W = cols * cell_w + (cols + 1) * pad
+    H = rows * (cell_h + label_h) + (rows + 1) * pad
+    out = Image.new("RGBA", (W, H), CREAM)
+    for i, (key, zh) in enumerate(labels):
+        col, row = i % 2, i // 2
+        x = pad + col * (cell_w + pad)
+        y = pad + row * (cell_h + label_h + pad)
+        scene = stage_scene(key)
+        out.paste(scene, (x, y + label_h), scene)
+        # tiny pixel label bar
+        fill_rect(out, x, y, x + cell_w - 1, y + label_h - 1, SAND)
+        # draw simple 5x7-ish text as colored blocks spelling via pattern — use outline ticks
+        # instead: colored stage stripe
+        colors = {
+            "barren": SOIL_D,
+            "sprout": SAGE,
+            "home": WOOD,
+            "thrive": MGREEN,
+        }
+        fill_rect(out, x, y, x + 6, y + label_h - 1, colors[key])
+        rect_outline(out, x, y, x + cell_w - 1, y + label_h - 1, OUTLINE)
+        # encode stage id as pixel Morse-like dots for review (readable in docs caption)
+        for j, ch in enumerate(key[:6]):
+            px(out, x + 10 + j * 4, y + 4, OUTLINE)
+            px(out, x + 10 + j * 4, y + 5, colors[key])
+            px(out, x + 11 + j * 4, y + 4, colors[key])
+    return out
+
+
+
 # --- Composite preview ------------------------------------------------------
 
 def farm_scene_preview() -> Image.Image:
@@ -735,6 +991,10 @@ def farm_scene_preview() -> Image.Image:
 
 GENERATORS_32 = {
     "tile_grass.png": tile_grass,
+    "tile_grass_barren.png": tile_grass_barren,
+    "tile_grass_sprout.png": tile_grass_sprout,
+    "tile_grass_home.png": tile_grass_home,
+    "tile_grass_thrive.png": tile_grass_thrive,
     "tile_dirt.png": tile_dirt,
     "tile_dirt_edge_n.png": lambda: tile_dirt_edge("n"),
     "tile_dirt_edge_s.png": lambda: tile_dirt_edge("s"),
@@ -756,10 +1016,18 @@ GENERATORS_32 = {
 # Decor sprites (variable size; still PIL nearest-neighbor)
 GENERATORS_DECOR = {
     "building_hut.png": building_hut,       # 48×48
+    "building_hut_ruin.png": building_hut_ruin,  # 48×48 barren stub
     "tree_oak.png": tree_oak,               # 32×40
     "tree_pine.png": tree_pine,             # 32×40
     "bush.png": bush,                       # 24×20
     "tree_shadow.png": tree_shadow,         # 32×16
+}
+
+GENERATORS_STAGE_SCENES = {
+    "stage_barren_preview.png": lambda: stage_scene("barren"),
+    "stage_sprout_preview.png": lambda: stage_scene("sprout"),
+    "stage_home_preview.png": lambda: stage_scene("home"),
+    "stage_thrive_preview.png": lambda: stage_scene("thrive"),
 }
 
 
@@ -799,6 +1067,24 @@ def main() -> None:
     preview.save(DOCS_PREVIEW / "farm_scene_preview.png", "PNG")
     written.append("farm_scene_preview.png")
     print("wrote farm_scene_preview.png (160x96)")
+
+    for name, gen in GENERATORS_STAGE_SCENES.items():
+        img = gen()
+        assert img.size == (160, 96), f"{name} size {img.size}"
+        img.save(OUT / name, "PNG")
+        img.resize((640, 384), Image.NEAREST).save(PREVIEW / name)
+        img.save(DOCS_PREVIEW / name, "PNG")
+        written.append(name)
+        print(f"wrote {name} (160x96)")
+
+    stages = farm_stages_preview()
+    stages.save(OUT / "farm_stages_preview.png", "PNG")
+    stages.resize((stages.size[0] * 4, stages.size[1] * 4), Image.NEAREST).save(
+        PREVIEW / "farm_stages_preview.png"
+    )
+    stages.save(DOCS_PREVIEW / "farm_stages_preview.png", "PNG")
+    written.append("farm_stages_preview.png")
+    print(f"wrote farm_stages_preview.png {stages.size[0]}x{stages.size[1]}")
     print(f"total: {len(written)}")
 
 

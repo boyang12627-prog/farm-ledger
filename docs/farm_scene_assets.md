@@ -20,7 +20,11 @@ python3 scripts/gen_farm_scene_assets.py
 
 | 檔名 | 用途 |
 |------|------|
-| `tile_grass.png` | 草地底 |
+| `tile_grass.png` | 草地底（通用） |
+| `tile_grass_barren.png` | 荒地：泥為主、稀疏草斑 |
+| `tile_grass_sprout.png` | 萌芽：田格感強（邊框＋泥屑） |
+| `tile_grass_home.png` | 安家：穩草地＋小花點 |
+| `tile_grass_thrive.png` | 旺場：更綠更密 |
 | `tile_dirt.png` | 耕地／泥地 |
 | `tile_dirt_edge_n.png` | 泥地北緣（接草） |
 | `tile_dirt_edge_s.png` | 泥地南緣 |
@@ -53,6 +57,7 @@ python3 scripts/gen_farm_scene_assets.py
 | 檔名 | 尺寸 | 用途 |
 |------|------|------|
 | `building_hut.png` | 48×48 | 簡易屋（2D 俯視可讀正面＋屋頂；大方塊色＋深輪廓） |
+| `building_hut_ruin.png` | 48×48 | 荒地殘破屋 stub（純視覺） |
 | `tree_oak.png` | 32×40 | 圓冠橡樹（chunky canopy＋dark outline） |
 | `tree_pine.png` | 32×40 | 層疊松樹（flat tiers＋dark outline） |
 | `bush.png` | 24×20 | 小樹叢（可選） |
@@ -63,8 +68,46 @@ python3 scripts/gen_farm_scene_assets.py
 | 檔名 | 尺寸 |
 |------|------|
 | `farm_scene_preview.png` | 160×96（草泥＋圍欄＋小芽＋屋＋樹） |
+| `stage_barren_preview.png` | 160×96 荒地場景 |
+| `stage_sprout_preview.png` | 160×96 萌芽場景 |
+| `stage_home_preview.png` | 160×96 安家場景 |
+| `stage_thrive_preview.png` | 160×96 旺場場景 |
+| `farm_stages_preview.png` | 344×244 四階對比（docs／drawable） |
 
-色板：奶油底、泥啡、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`；decor 加深輪廓 `#3D2A18`（Minecraft-inspired readability, 2D top-down）。
+對比圖亦見：`docs/farm_stages_preview.png`。
+
+色板：奶油底、泥啡 `#A67C52`、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`；decor 加深輪廓 `#3D2A18`（Minecraft-inspired readability, 2D top-down）。
+
+## 階段 → drawable 對應（FarmStage）
+
+由 `FarmStageLogic.capabilities(totalSettleDays)` 驅動；**唔改獎勵公式／防刷**，只係 UI 顯示／隱藏。
+
+| 階段 | 門檻（結算日） | 地面 tile | Hut | Fence | Trees / bush | 寵物 |
+|------|----------------|-----------|-----|-------|--------------|------|
+| **荒地** `BARREN` | 0–2 | 大面積 `tile_dirt`＋四角 `tile_grass_barren` | `building_hut_ruin` | 唔顯示 | 無 | 0 |
+| **萌芽** `SPROUT` | ≥3 | `tile_grass_sprout`＋泥床／`tile_dirt_edge_*` | 唔顯示 | 唔顯示 | 無（或極少） | 1（小芽） |
+| **安家** `HOMESTEAD` | ≥7 | `tile_grass_home`＋泥床／edge | `building_hut` | 全套 fence_* | `tree_pine`＋可選 `bush` | 1 |
+| **旺場** `THRIVING` | ≥14（二寵 ≥21） | `tile_grass_thrive` | `building_hut` | 全套 fence_* | pine＋oak＋多 `bush` | 1（≥21 → 2） |
+
+### 建議 Compose 按 FarmStage 開關
+
+`FarmSceneLayer` 已接 `FarmStageCapabilities`：
+
+```kotlin
+val stageGrass = when {
+    capabilities.greenerDenser -> R.drawable.tile_grass_thrive
+    capabilities.showHut -> R.drawable.tile_grass_home
+    capabilities.showGrassEdges -> R.drawable.tile_grass_sprout
+    else -> R.drawable.tile_grass_barren
+}
+// showHut / showFence / greenerDenser / animalSlots 直接控制 hut、trees、bush、第二寵物位
+```
+
+重新產生含階段預覽：
+
+```bash
+python3 scripts/gen_farm_scene_assets.py
+```
 
 ## 暖泥 token（場景層＋六格田）
 
