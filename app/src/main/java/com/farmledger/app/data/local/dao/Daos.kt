@@ -52,4 +52,7 @@ interface SettlementDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(list: List<DailySettlementEntity>)
+
+    @Query("SELECT COUNT(*) FROM daily_settlements")
+    suspend fun countAll(): Int
 }

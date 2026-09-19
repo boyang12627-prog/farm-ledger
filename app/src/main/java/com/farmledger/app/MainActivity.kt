@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -29,20 +26,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.farmledger.app.ui.navigation.Routes
-import com.farmledger.app.ui.screens.decor.DecorScreen
-import com.farmledger.app.ui.screens.farm.FarmScreen
-import com.farmledger.app.ui.screens.home.HomeScreen
-import com.farmledger.app.ui.screens.ledger.EntryEditScreen
-import com.farmledger.app.ui.screens.ledger.LedgerScreen
-import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
-import com.farmledger.app.ui.screens.pet.PetScreen
-import com.farmledger.app.ui.screens.settings.SettingsScreen
-import com.farmledger.app.ui.screens.settle.SettleScreen
-import com.farmledger.app.ui.screens.weekly.WeeklyReviewScreen
-import com.farmledger.app.ui.theme.FarmLedgerTheme
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.AppViewModelFactory
+import com.farmledger.app.ui.navigation.Routes
+import com.farmledger.app.ui.screens.farm.FarmScreen
+import com.farmledger.app.ui.screens.ledger.EntryEditScreen
+import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
+import com.farmledger.app.ui.screens.settings.SettingsScreen
+import com.farmledger.app.ui.screens.weekly.WeeklyReviewScreen
+import com.farmledger.app.ui.theme.FarmLedgerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,10 +59,12 @@ fun FarmLedgerNav(vm: AppViewModel) {
 
     LaunchedEffect(Unit) { vm.syncClock() }
 
-    val showBottom = progress.onboardingDone && route !in listOf(Routes.ONBOARDING) &&
-        !route.startsWith("entry_edit")
+    val showBottom = progress.onboardingDone &&
+        route !in listOf(Routes.ONBOARDING) &&
+        !route.startsWith("entry_edit") &&
+        route != Routes.WEEKLY
 
-    val start = if (progress.onboardingDone) Routes.HOME else Routes.ONBOARDING
+    val start = if (progress.onboardingDone) Routes.FARM else Routes.ONBOARDING
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,33 +72,20 @@ fun FarmLedgerNav(vm: AppViewModel) {
             if (showBottom) {
                 NavigationBar {
                     NavigationBarItem(
-                        selected = route == Routes.HOME,
-                        onClick = { nav.navigate(Routes.HOME) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.Home, null) },
-                        label = { Text("主頁") }
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.LEDGER || route.startsWith("entry_edit"),
-                        onClick = { nav.navigate(Routes.LEDGER) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.MenuBook, null) },
-                        label = { Text("帳簿") }
-                    )
-                    NavigationBarItem(
                         selected = route == Routes.FARM,
-                        onClick = { nav.navigate(Routes.FARM) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.Agriculture, null) },
-                        label = { Text("農田") }
-                    )
-                    NavigationBarItem(
-                        selected = route == Routes.PET,
-                        onClick = { nav.navigate(Routes.PET) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.Pets, null) },
-                        label = { Text("寵物") }
+                        onClick = {
+                            nav.navigate(Routes.FARM) {
+                                launchSingleTop = true
+                                popUpTo(Routes.FARM) { inclusive = false }
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Agriculture, contentDescription = null) },
+                        label = { Text("農場") }
                     )
                     NavigationBarItem(
                         selected = route == Routes.SETTINGS,
                         onClick = { nav.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.Settings, null) },
+                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                         label = { Text("設定") }
                     )
                 }
@@ -119,27 +100,16 @@ fun FarmLedgerNav(vm: AppViewModel) {
             composable(Routes.ONBOARDING) {
                 OnboardingScreen(onDone = {
                     vm.completeOnboarding()
-                    nav.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+                    nav.navigate(Routes.FARM) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
                 })
             }
-            composable(Routes.HOME) {
-                HomeScreen(
+            composable(Routes.FARM) {
+                FarmScreen(
                     vm = vm,
-                    onLedger = { nav.navigate(Routes.LEDGER) },
-                    onSettle = { nav.navigate(Routes.SETTLE) },
-                    onFarm = { nav.navigate(Routes.FARM) },
-                    onPet = { nav.navigate(Routes.PET) },
-                    onDecor = { nav.navigate(Routes.DECOR) },
-                    onWeekly = { nav.navigate(Routes.WEEKLY) },
-                    onSettings = { nav.navigate(Routes.SETTINGS) }
-                )
-            }
-            composable(Routes.LEDGER) {
-                LedgerScreen(
-                    vm = vm,
-                    onAdd = { nav.navigate(Routes.entryEdit(null)) },
-                    onEdit = { id -> nav.navigate(Routes.entryEdit(id)) },
-                    onSettle = { nav.navigate(Routes.SETTLE) }
+                    onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) },
+                    onEditEntry = { id -> nav.navigate(Routes.entryEdit(id)) },
+                    onAddEntry = { nav.navigate(Routes.entryEdit(null)) }
                 )
             }
             composable(
@@ -152,18 +122,6 @@ fun FarmLedgerNav(vm: AppViewModel) {
                     entryId = id,
                     onDone = { nav.popBackStack() }
                 )
-            }
-            composable(Routes.SETTLE) {
-                SettleScreen(vm = vm, onBack = { nav.popBackStack() })
-            }
-            composable(Routes.FARM) {
-                FarmScreen(vm = vm)
-            }
-            composable(Routes.PET) {
-                PetScreen(vm = vm)
-            }
-            composable(Routes.DECOR) {
-                DecorScreen(vm = vm, onBack = { nav.popBackStack() })
             }
             composable(Routes.WEEKLY) {
                 WeeklyReviewScreen(vm = vm, onBack = { nav.popBackStack() })

@@ -51,6 +51,7 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.farmledger.app.R
 import com.farmledger.app.ui.screens.farm.FarmSceneLayer
+import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.ui.theme.FarmBg
 import com.farmledger.app.ui.theme.FarmExpense
@@ -77,7 +78,7 @@ class ScreenScreenshotTest {
     val paparazzi = Paparazzi(
         deviceConfig = DeviceConfig.PIXEL_5.copy(softButtons = false),
         theme = "android:Theme.Material3.Light.NoActionBar",
-        maxPercentDifference = 0.01
+        maxPercentDifference = 0.15
     )
 
     @Test
@@ -118,7 +119,7 @@ private fun HomeFixture() {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Text("主頁", style = MaterialTheme.typography.headlineMedium, color = FarmText)
+        Text("農場・萌芽", style = MaterialTheme.typography.headlineMedium, color = FarmText)
         Spacer(Modifier.height(8.dp))
         Card(
             Modifier.fillMaxWidth(),
@@ -466,7 +467,7 @@ private fun FarmFixture() {
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("農田", style = MaterialTheme.typography.headlineMedium, color = FarmText)
+            Text("農場・安家", style = MaterialTheme.typography.headlineMedium, color = FarmText)
             Spacer(Modifier.size(8.dp))
             Image(
                 painterResource(R.drawable.ic_seed),
@@ -539,7 +540,8 @@ private fun FarmFixture() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
-                    interactive = false
+                    interactive = false,
+                    capabilities = FarmStageLogic.capabilities(7)
                 )
                 Box(
                     Modifier

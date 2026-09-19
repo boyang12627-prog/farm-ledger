@@ -202,10 +202,37 @@ class FarmLedgerRepository(
         syncClock()
         val progress = prefs.progressFlow.first()
         val pet = prefs.petFlow.first()
-        val (updated, msg) = FarmLogic.feedPet(pet, System.currentTimeMillis(), progress.clockPaused)
-        if (msg.contains("成功")) prefs.savePet(updated)
-        return msg
+        val r = FarmLogic.feedPet(pet, progress, System.currentTimeMillis())
+        if (r.ok) {
+            prefs.saveProgress(r.progress)
+            r.pet?.let { prefs.savePet(it) }
+        }
+        return r.msg
     }
+
+    /** 場景內佈置：扣成長點後解鎖並放置一件尚未放置的裝飾。 */
+    suspend fun buildDecorInScene(): String {
+        syncClock()
+        val progress = prefs.progressFlow.first()
+        val decors = prefs.decorationsFlow.first().toMutableList()
+        val placedCount = decors.count { it.placed }
+        val r = FarmLogic.buildDecor(progress, placedCount)
+        if (!r.ok) return r.msg
+        // Prefer unlocked-but-unplaced; else unlock first locked within slot
+        val targetIdx = decors.indexOfFirst { it.unlocked && !it.placed }
+            .takeIf { it >= 0 }
+            ?: decors.indexOfFirst { !it.unlocked }.takeIf { it >= 0 }
+        if (targetIdx == null) {
+            return "沒有可佈置的裝飾。"
+        }
+        val d = decors[targetIdx]
+        decors[targetIdx] = d.copy(unlocked = true, placed = true)
+        prefs.saveProgress(r.progress)
+        prefs.saveDecorations(decors)
+        return r.msg + "（${decors[targetIdx].nameZh}）"
+    }
+
+    suspend fun settlementCount(): Int = settlementDao.countAll()
 
     suspend fun interactPet(): String {
         syncClock()

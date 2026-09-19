@@ -98,6 +98,7 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     fun renamePet(name: String) = viewModelScope.launch { repo.renamePet(name) }
 
     fun toggleDecor(id: String) = viewModelScope.launch { repo.toggleDecorationPlaced(id) }
+    fun buildDecorInScene() = viewModelScope.launch { _message.value = repo.buildDecorInScene() }
 
     suspend fun exportJson(): String = repo.exportJson()
     suspend fun exportCsv(): String = repo.exportCsv()

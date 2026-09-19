@@ -93,6 +93,7 @@ object DailySettlementLogic {
             growthPoints = progress.growthPoints + points,
             seeds = progress.seeds + seedsBonus,
             streakDays = newStreak,
+            totalSettleDays = progress.totalSettleDays + 1,
             lastSettleDate = today,
             lastKnownLocalDate = today,
             unlockedStreakRewards = unlocked
