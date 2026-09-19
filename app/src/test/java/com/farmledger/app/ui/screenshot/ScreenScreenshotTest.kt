@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.farmledger.app.R
+import com.farmledger.app.ui.screens.farm.FarmSceneLayer
 import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.ui.theme.FarmBg
 import com.farmledger.app.ui.theme.FarmExpense
@@ -470,6 +471,8 @@ private fun FarmFixture() {
                 )
             }
         }
+        Spacer(Modifier.height(8.dp))
+        FarmSceneLayer(modifier = Modifier.fillMaxWidth(), interactive = false)
         Spacer(Modifier.height(8.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),

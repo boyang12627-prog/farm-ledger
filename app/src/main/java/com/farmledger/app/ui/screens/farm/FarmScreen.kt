@@ -121,71 +121,76 @@ fun FarmScreen(vm: AppViewModel) {
             }
         }
         Spacer(Modifier.height(8.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(plots, key = { it.index }) { plot ->
-                val cardColor = when (plot.state) {
-                    PlotState.EMPTY -> Color(0xFFE8D9B5)
-                    PlotState.GROWING -> Color(0xFFD4E8C0)
-                    PlotState.READY -> Color(0xFFF5D9A0)
-                }
-                val iconRes = when (plot.state) {
-                    PlotState.EMPTY -> R.drawable.tile_soil_empty
-                    PlotState.GROWING -> plot.crop?.let { cropGrowRes(it) } ?: R.drawable.tile_soil_empty
-                    PlotState.READY -> plot.crop?.let { cropReadyRes(it) } ?: R.drawable.tile_soil_empty
-                }
-                Card(
-                    Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = cardColor)
-                ) {
-                    Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("田 #${plot.index + 1}", style = MaterialTheme.typography.labelMedium, color = FarmText)
-                        Image(
-                            painterResource(iconRes),
-                            contentDescription = plot.state.name,
-                            modifier = Modifier.size(48.dp),
-                            contentScale = ContentScale.FillBounds
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
+        // Phase-2 farm scene (tiles + fence + 小芽) under the crop-plot UI block.
+        Column(Modifier.weight(1f).fillMaxWidth()) {
+            FarmSceneLayer(modifier = Modifier.fillMaxWidth(), interactive = true)
+            Spacer(Modifier.height(8.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(plots, key = { it.index }) { plot ->
+                    val cardColor = when (plot.state) {
+                        PlotState.EMPTY -> Color(0xFFE8D9B5)
+                        PlotState.GROWING -> Color(0xFFD4E8C0)
+                        PlotState.READY -> Color(0xFFF5D9A0)
+                    }
+                    val iconRes = when (plot.state) {
+                        PlotState.EMPTY -> R.drawable.tile_soil_empty
+                        PlotState.GROWING -> plot.crop?.let { cropGrowRes(it) } ?: R.drawable.tile_soil_empty
+                        PlotState.READY -> plot.crop?.let { cropReadyRes(it) } ?: R.drawable.tile_soil_empty
+                    }
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = cardColor)
+                    ) {
+                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("田 #${plot.index + 1}", style = MaterialTheme.typography.labelMedium, color = FarmText)
+                            Image(
+                                painterResource(iconRes),
+                                contentDescription = plot.state.name,
+                                modifier = Modifier.size(48.dp),
+                                contentScale = ContentScale.FillBounds
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                when (plot.state) {
+                                    PlotState.EMPTY -> "空地"
+                                    PlotState.GROWING -> "成長中：${plot.crop?.let { FarmLogic.cropZh(it) }}"
+                                    PlotState.READY -> "可收成：${plot.crop?.let { FarmLogic.cropZh(it) }}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = FarmText
+                            )
                             when (plot.state) {
-                                PlotState.EMPTY -> "空地"
-                                PlotState.GROWING -> "成長中：${plot.crop?.let { FarmLogic.cropZh(it) }}"
-                                PlotState.READY -> "可收成：${plot.crop?.let { FarmLogic.cropZh(it) }}"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = FarmText
-                        )
-                        when (plot.state) {
-                            PlotState.EMPTY -> Button(
-                                onClick = { vm.plant(plot.index, selectedCrop) },
-                                colors = ButtonDefaults.buttonColors(containerColor = FarmSoil, contentColor = Color.White)
-                            ) {
-                                Image(painterResource(R.drawable.btn_plant), null, Modifier.size(18.dp), contentScale = ContentScale.FillBounds)
-                                Spacer(Modifier.size(4.dp))
-                                Text("種植")
-                            }
-                            PlotState.READY -> Button(
-                                onClick = { vm.harvest(plot.index) },
-                                colors = ButtonDefaults.buttonColors(containerColor = FarmGrowth, contentColor = Color.White)
-                            ) {
-                                Image(painterResource(R.drawable.btn_harvest), null, Modifier.size(18.dp), contentScale = ContentScale.FillBounds)
-                                Spacer(Modifier.size(4.dp))
-                                Text("收成")
-                            }
-                            PlotState.GROWING -> {
-                                val remainMs = ((plot.readyAtEpochMs ?: nowMs) - nowMs).coerceAtLeast(0L)
-                                Text(
-                                    "示範節奏剩餘 ${formatRemain(remainMs)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = FarmSoil,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                PlotState.EMPTY -> Button(
+                                    onClick = { vm.plant(plot.index, selectedCrop) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = FarmSoil, contentColor = Color.White)
+                                ) {
+                                    Image(painterResource(R.drawable.btn_plant), null, Modifier.size(18.dp), contentScale = ContentScale.FillBounds)
+                                    Spacer(Modifier.size(4.dp))
+                                    Text("種植")
+                                }
+                                PlotState.READY -> Button(
+                                    onClick = { vm.harvest(plot.index) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = FarmGrowth, contentColor = Color.White)
+                                ) {
+                                    Image(painterResource(R.drawable.btn_harvest), null, Modifier.size(18.dp), contentScale = ContentScale.FillBounds)
+                                    Spacer(Modifier.size(4.dp))
+                                    Text("收成")
+                                }
+                                PlotState.GROWING -> {
+                                    val remainMs = ((plot.readyAtEpochMs ?: nowMs) - nowMs).coerceAtLeast(0L)
+                                    Text(
+                                        "示範節奏剩餘 ${formatRemain(remainMs)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = FarmSoil,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
