@@ -66,6 +66,23 @@ python3 scripts/gen_farm_scene_assets.py
 
 色板：奶油底、泥啡、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`；decor 加深輪廓 `#3D2A18`（Minecraft-inspired readability, 2D top-down）。
 
+## 暖泥 token（場景層＋六格田）
+
+Compose：`Theme.kt`（`FarmMud*`／`FarmStroke`／`FarmPlot*`）。PNG：`gen_farm_scene_assets.py`＋`gen_pixel_assets.py` 共用同一填泥。
+
+| Token | Hex | 用途 |
+|------|------|------|
+| `FarmMudHighlight` / `SOIL_L` | `#D9B48C` | 泥高光／場景→田格泥帶 |
+| `FarmMudMid` / `SOIL_M` | `#C4966A` | 泥中調 |
+| `FarmMudDark` / `SOIL_D` / `FarmSoil` | `#A67C52` | 泥底／種植鈕 |
+| `FarmStroke` / `OUTLINE` | `#6B4A2E` | 場景＋田格卡描邊 |
+| `FarmSand` / `FarmPlotEmpty` | `#F2E2C4` | 田格淺奶油卡底 |
+| `FarmPlotGrowing` | `#E8DCC4` | 成長中卡底（暖奶油） |
+| `FarmPlotReady` | `#F5E8D0` | 可收成卡底（暖高光奶油） |
+| `FarmBg` / `CREAM` | `#FFF8E7` | 畫面奶油底 |
+
+唔改獎勵／domain；只統一泥色同描邊令場景層同下面六格視覺黏合。
+
 ## 建議 Compose 接法（四層）
 
 唔改獎勵 domain；只係 UI 場景層。

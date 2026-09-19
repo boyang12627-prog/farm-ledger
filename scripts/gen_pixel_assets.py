@@ -7,6 +7,8 @@ from PIL import Image
 OUT = Path("/workspace/farm-ledger/app/src/main/res/drawable-nodpi")
 PREVIEW = Path("/workspace/farm-ledger/scripts/preview_assets")
 
+# Warm mud tokens (aligned with gen_farm_scene_assets.py + Theme.kt):
+#   SOIL_L #D9B48C | SOIL_M #C4966A | SOIL_D #A67C52 | OUTLINE #6B4A2E | SAND #F2E2C4
 CREAM = (0xFF, 0xF8, 0xE7, 255)
 SAND = (0xF2, 0xE2, 0xC4, 255)
 SOIL_L = (0xD9, 0xB4, 0x8C, 255)
@@ -252,11 +254,10 @@ def crop_tomato_ready():
         fill_rect(img, cx, 6, cx + 1, 8, DGREEN)
     return img
 
-def tile_soil_empty():
-    """Full-tile mud with clear furrows, stones, dark outline."""
-    img = new_img()
-    for y in range(1, 31):
-        for x in range(1, 31):
+def fill_warm_mud(img, x0=0, y0=0, x1=31, y1=31):
+    """Shared warm-mud fill (same tokens/furrows as scene tile_dirt)."""
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
             band = ((x + y // 2) // 3) % 2
             c = SOIL_D if band == 0 else SOIL_L
             if (x * 7 + y * 13) % 11 == 0:
@@ -265,21 +266,29 @@ def tile_soil_empty():
                 c = SOIL_L if c == SOIL_D else SOIL_D
             px(img, x, y, c)
     for y in (6, 12, 18, 24):
-        for x in range(2, 30):
+        if not (y0 <= y <= y1):
+            continue
+        for x in range(max(x0, 0), min(x1, 31) + 1):
             px(img, x, y, OUTLINE if x % 4 == 0 else SOIL_D)
-            if y + 1 < 31:
+            if y + 1 <= y1:
                 px(img, x, y + 1, SOIL_L)
     stones = [
-        (5, 8), (6, 8), (5, 9), (14, 5), (15, 5),
-        (23, 10), (24, 10), (23, 11), (9, 16), (10, 16),
-        (18, 15), (19, 15), (18, 16), (4, 22), (5, 22),
-        (26, 20), (27, 20), (26, 21), (12, 26), (13, 26),
-        (21, 27), (22, 27), (21, 28), (16, 20),
+        (5, 8), (6, 8), (14, 5), (15, 5), (23, 10), (24, 10),
+        (9, 16), (10, 16), (18, 15), (19, 15), (4, 22), (5, 22),
+        (26, 20), (27, 20), (12, 26), (13, 26), (21, 27), (16, 20),
     ]
     for i, (x, y) in enumerate(stones):
-        px(img, x, y, STONE if i % 3 else STONE_L)
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            px(img, x, y, STONE if i % 3 else STONE_L)
     for x, y in [(8, 7), (17, 13), (25, 19), (11, 25), (20, 7), (7, 19)]:
-        px(img, x, y, SAND)
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            px(img, x, y, SAND)
+
+
+def tile_soil_empty():
+    """Full-tile mud with clear furrows, stones, dark outline (#6B4A2E)."""
+    img = new_img()
+    fill_warm_mud(img, 1, 1, 30, 30)
     rect_outline(img, 0, 0, 31, 31, OUTLINE)
     for i in range(1, 31):
         px(img, i, 1, SOIL_L)

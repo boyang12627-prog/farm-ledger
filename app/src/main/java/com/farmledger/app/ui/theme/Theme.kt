@@ -9,13 +9,24 @@ import androidx.compose.ui.graphics.Color
 
 // Pixel farm palette (像素美術管家)
 val FarmBg = Color(0xFFFFF8E7)
-val FarmStroke = Color(0xFF6B4A2E)
+val FarmStroke = Color(0xFF6B4A2E) // scene + plot outline
 val FarmText = Color(0xFF6B4A2E)
 val FarmGrowth = Color(0xFF8FBF6A)
 val FarmIncome = Color(0xFF4F7A45)
 val FarmExpense = Color(0xFFC75B39)
 val FarmSelected = Color(0xFFE8A838) // replaces pink
-val FarmSoil = Color(0xFF8B6914)
+
+// Warm mud tokens — match drawable-nodpi tile_dirt* / tile_soil_empty
+val FarmMudHighlight = Color(0xFFD9B48C) // SOIL_L
+val FarmMudMid = Color(0xFFC4966A)       // SOIL_M
+val FarmMudDark = Color(0xFFA67C52)      // SOIL_D
+val FarmSand = Color(0xFFF2E2C4)         // cream-warm plot card board
+val FarmSoil = FarmMudDark               // plant / mud accent (was olive #8B6914)
+
+// Plot card fills (cream family + FarmStroke border in FarmScreen)
+val FarmPlotEmpty = FarmSand             // #F2E2C4
+val FarmPlotGrowing = Color(0xFFE8DCC4)  // soft warm cream
+val FarmPlotReady = Color(0xFFF5E8D0)    // soft warm highlight cream
 
 // Aliases for existing call sites / older names
 val SoilBrown = FarmSoil
@@ -36,7 +47,7 @@ private val LightColors = lightColorScheme(
     onBackground = FarmText,
     surface = Color(0xFFFFFBF0),
     onSurface = FarmText,
-    surfaceVariant = Color(0xFFE8D9B5),
+    surfaceVariant = FarmSand,
     primaryContainer = Color(0xFFD4E8C0),
     onPrimaryContainer = FarmText,
     secondaryContainer = Color(0xFFF5D9A0),

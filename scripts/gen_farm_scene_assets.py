@@ -20,7 +20,13 @@ OUT = ROOT / "app/src/main/res/drawable-nodpi"
 PREVIEW = ROOT / "scripts/preview_assets"
 DOCS_PREVIEW = ROOT / "docs"
 
-# Warm farm palette (aligned with gen_pixel_assets.py)
+# Warm farm palette (aligned with gen_pixel_assets.py + Theme.kt)
+# Warm mud tokens (scene dirt bed + plot tiles):
+#   SOIL_L / FarmMudHighlight #D9B48C
+#   SOIL_M / FarmMudMid       #C4966A
+#   SOIL_D / FarmMudDark      #A67C52
+#   OUTLINE / FarmStroke      #6B4A2E
+#   SAND / FarmSand           #F2E2C4  (cream plot card board)
 CREAM = (0xFF, 0xF8, 0xE7, 255)
 SAND = (0xF2, 0xE2, 0xC4, 255)
 SOIL_L = (0xD9, 0xB4, 0x8C, 255)
@@ -130,30 +136,42 @@ def tile_grass() -> Image.Image:
     return img
 
 
-def tile_dirt() -> Image.Image:
-    """Tilled warm mud patch for crop beds."""
-    img = new_img()
-    for y in range(32):
-        for x in range(32):
+def fill_warm_mud(img: Image.Image, x0: int = 0, y0: int = 0, x1: int = 31, y1: int = 31) -> None:
+    """Shared warm-mud fill (same tokens/furrows as tile_soil_empty)."""
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
             band = ((x + y // 2) // 3) % 2
             c = SOIL_D if band == 0 else SOIL_L
             if (x * 7 + y * 13) % 11 == 0:
                 c = SOIL_M
-            if (x * 5 + y * 3) % 19 == 0:
+            if (x * 5 + y * 3) % 17 == 0:
                 c = SOIL_L if c == SOIL_D else SOIL_D
             px(img, x, y, c)
-    for y in (5, 11, 17, 23, 29):
-        for x in range(32):
-            px(img, x, y, SOIL_D if x % 3 else OUTLINE)
-            if y + 1 < 32:
+    # Furrow rows — OUTLINE #6B4A2E ticks match plot empty tile
+    for y in (6, 12, 18, 24):
+        if not (y0 <= y <= y1):
+            continue
+        for x in range(max(x0, 0), min(x1, 31) + 1):
+            px(img, x, y, OUTLINE if x % 4 == 0 else SOIL_D)
+            if y + 1 <= y1:
                 px(img, x, y + 1, SOIL_L)
-    for i, (x, y) in enumerate(
-        [(4, 7), (5, 7), (15, 4), (22, 9), (8, 15), (19, 14),
-         (3, 21), (26, 18), (12, 25), (20, 26), (28, 12)]
-    ):
-        px(img, x, y, STONE if i % 2 else STONE_L)
-    for x, y in [(10, 8), (17, 19), (25, 6), (6, 27)]:
-        px(img, x, y, SAND)
+    stones = [
+        (5, 8), (6, 8), (14, 5), (15, 5), (23, 10), (24, 10),
+        (9, 16), (10, 16), (18, 15), (19, 15), (4, 22), (5, 22),
+        (26, 20), (27, 20), (12, 26), (13, 26), (21, 27), (16, 20),
+    ]
+    for i, (x, y) in enumerate(stones):
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            px(img, x, y, STONE if i % 3 else STONE_L)
+    for x, y in [(8, 7), (17, 13), (25, 19), (11, 25), (20, 7), (7, 19)]:
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            px(img, x, y, SAND)
+
+
+def tile_dirt() -> Image.Image:
+    """Tilled warm mud patch for crop beds (shared mud tokens with plot tiles)."""
+    img = new_img()
+    fill_warm_mud(img)
     return img
 
 
