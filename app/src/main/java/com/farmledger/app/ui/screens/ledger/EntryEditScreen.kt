@@ -4,7 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,15 +40,20 @@ import com.farmledger.app.ui.theme.FarmText
 fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
     val existing = entryId?.let { vm.entryById(it) }
     val isEdit = existing != null
-    var type by remember { mutableStateOf(existing?.type ?: EntryType.EXPENSE) }
-    var amountText by remember {
+    var type by remember(entryId) { mutableStateOf(existing?.type ?: EntryType.EXPENSE) }
+    var amountText by remember(entryId) {
         mutableStateOf(
             existing?.let { if (it.amountMinor == 0L) "" else (it.amountMinor / 100.0).toString() } ?: ""
         )
     }
-    var note by remember { mutableStateOf(existing?.note ?: "") }
+    var note by remember(entryId) { mutableStateOf(existing?.note ?: "") }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         Text(if (!isEdit) "新增帳目" else "編輯帳目", style = MaterialTheme.typography.headlineMedium, color = FarmText)
         Spacer(Modifier.height(8.dp))
         Card(
@@ -136,5 +142,6 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             }
         }
         TextButton(onClick = onDone) { Text("取消") }
+        Spacer(Modifier.height(24.dp))
     }
 }

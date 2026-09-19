@@ -61,6 +61,7 @@ import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.domain.usecase.FarmLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.ui.AppViewModel
+import com.farmledger.app.ui.screens.ledger.EntryEditScreen
 import com.farmledger.app.ui.theme.FarmBg
 import com.farmledger.app.ui.theme.FarmGrowth
 import com.farmledger.app.ui.theme.FarmMudHighlight
@@ -79,14 +80,18 @@ private val FarmPanelGrassDense = Color(0xFFA8C97A)
 
 private enum class FarmOverlay { None, Ledger, Settle }
 
+/** Ledger sheet inner page: list stays open; add/edit never leaves farm world. */
+private sealed class LedgerSheetPage {
+    data object List : LedgerSheetPage()
+    data class Edit(val entryId: String?) : LedgerSheetPage()
+}
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FarmScreen(
     vm: AppViewModel,
     onOpenWeekly: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onEditEntry: (String) -> Unit = {},
-    onAddEntry: () -> Unit = {}
+    onOpenSettings: () -> Unit = {}
 ) {
     val plots by vm.plots.collectAsState()
     val progress by vm.progress.collectAsState()
@@ -97,6 +102,7 @@ fun FarmScreen(
     var selectedCrop by remember { mutableStateOf(CropKind.WHEAT) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var overlay by remember { mutableStateOf(FarmOverlay.None) }
+    var ledgerPage by remember { mutableStateOf<LedgerSheetPage>(LedgerSheetPage.List) }
 
     val caps = remember(progress.totalSettleDays) {
         FarmStageLogic.capabilities(progress.totalSettleDays)
@@ -171,7 +177,10 @@ fun FarmScreen(
         // Overlay CTAs — 記帳／結算為場景上的 sheet，非獨立首頁分頁
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-                onClick = { overlay = FarmOverlay.Ledger },
+                onClick = {
+                    ledgerPage = LedgerSheetPage.List
+                    overlay = FarmOverlay.Ledger
+                },
                 modifier = Modifier.weight(1f).height(44.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = FarmGrowth, contentColor = FarmText)
             ) { Text("記帳") }
@@ -377,21 +386,28 @@ fun FarmScreen(
 
     if (overlay == FarmOverlay.Ledger) {
         ModalBottomSheet(
-            onDismissRequest = { overlay = FarmOverlay.None },
+            onDismissRequest = {
+                overlay = FarmOverlay.None
+                ledgerPage = LedgerSheetPage.List
+            },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
-            LedgerOverlayContent(
-                vm = vm,
-                onAdd = {
-                    overlay = FarmOverlay.None
-                    onAddEntry()
-                },
-                onEdit = { id ->
-                    overlay = FarmOverlay.None
-                    onEditEntry(id)
-                },
-                onGoSettle = { overlay = FarmOverlay.Settle }
-            )
+            when (val page = ledgerPage) {
+                is LedgerSheetPage.List -> LedgerOverlayContent(
+                    vm = vm,
+                    onAdd = { ledgerPage = LedgerSheetPage.Edit(null) },
+                    onEdit = { id -> ledgerPage = LedgerSheetPage.Edit(id) },
+                    onGoSettle = {
+                        ledgerPage = LedgerSheetPage.List
+                        overlay = FarmOverlay.Settle
+                    }
+                )
+                is LedgerSheetPage.Edit -> EntryEditScreen(
+                    vm = vm,
+                    entryId = page.entryId,
+                    onDone = { ledgerPage = LedgerSheetPage.List }
+                )
+            }
         }
     }
     if (overlay == FarmOverlay.Settle) {

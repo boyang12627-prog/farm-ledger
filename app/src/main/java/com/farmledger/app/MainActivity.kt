@@ -20,17 +20,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.AppViewModelFactory
 import com.farmledger.app.ui.navigation.Routes
 import com.farmledger.app.ui.screens.farm.FarmScreen
-import com.farmledger.app.ui.screens.ledger.EntryEditScreen
 import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
 import com.farmledger.app.ui.screens.settings.SettingsScreen
 import com.farmledger.app.ui.screens.weekly.WeeklyReviewScreen
@@ -61,7 +58,6 @@ fun FarmLedgerNav(vm: AppViewModel) {
 
     val showBottom = progress.onboardingDone &&
         route !in listOf(Routes.ONBOARDING) &&
-        !route.startsWith("entry_edit") &&
         route != Routes.WEEKLY
 
     val start = if (progress.onboardingDone) Routes.FARM else Routes.ONBOARDING
@@ -107,20 +103,7 @@ fun FarmLedgerNav(vm: AppViewModel) {
                 FarmScreen(
                     vm = vm,
                     onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
-                    onOpenSettings = { nav.navigate(Routes.SETTINGS) },
-                    onEditEntry = { id -> nav.navigate(Routes.entryEdit(id)) },
-                    onAddEntry = { nav.navigate(Routes.entryEdit(null)) }
-                )
-            }
-            composable(
-                route = "entry_edit?id={id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })
-            ) { entry ->
-                val id = entry.arguments?.getString("id").orEmpty().ifBlank { null }
-                EntryEditScreen(
-                    vm = vm,
-                    entryId = id,
-                    onDone = { nav.popBackStack() }
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) }
                 )
             }
             composable(Routes.WEEKLY) {
