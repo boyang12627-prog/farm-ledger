@@ -1,4 +1,4 @@
-# 俯視農田場景素材（自繪 32px）
+# 俯視農田場景素材（自繪 32px＋decor）
 
 暖色像素農田下一階場景感用圖，全部以 `scripts/gen_farm_scene_assets.py`（PIL nearest-neighbor）自繪，**非**星露谷或其他第三方 tileset。
 
@@ -46,15 +46,25 @@ python3 scripts/gen_farm_scene_assets.py
 | `pet_happy.png` | 小芽開心（互動後） |
 | `fx_heart.png` | 互動心心 |
 
+### Decor：簡易屋＋樹叢（透明底，尺寸不一）
+
+| 檔名 | 尺寸 | 用途 |
+|------|------|------|
+| `building_hut.png` | 48×48 | 簡易屋（微俯視／正面可讀，磚紅屋頂） |
+| `tree_oak.png` | 32×40 | 圓冠橡樹 |
+| `tree_pine.png` | 32×40 | 層疊松樹 |
+| `bush.png` | 24×20 | 小樹叢（可選） |
+| `tree_shadow.png` | 32×16 | 樹腳柔邊陰影（可選，疊喺 decor 下） |
+
 ### 合成預覽
 
 | 檔名 | 尺寸 |
 |------|------|
-| `farm_scene_preview.png` | 160×96 |
+| `farm_scene_preview.png` | 160×96（草泥＋圍欄＋小芽＋屋＋樹） |
 
-色板：奶油底、泥啡、鼠尾草／綠、磚紅、金黃、描邊 `#6B4A2E`。
+色板：奶油底、泥啡、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`。
 
-## 建議 Compose 接法（三層）
+## 建議 Compose 接法（四層）
 
 唔改獎勵 domain；只係 UI 場景層。
 
@@ -68,7 +78,11 @@ Box(Modifier.fillMaxWidth().aspectRatio(160f / 96f)) {
     // 2) 圍欄層（同座標，z 較高）
     //    fence_h / fence_v / fence_corner_*
 
-    // 3) 寵物 Sprite + 心心 FX
+    // 3) Decor 層（屋／樹／叢；可選 tree_shadow 先畫再畫主體）
+    //    Image(painterResource(R.drawable.building_hut))
+    //    Image(painterResource(R.drawable.tree_oak)) / tree_pine / bush
+
+    // 4) 寵物 Sprite + 心心 FX
     //    Image(painterResource(R.drawable.pet_idle)) 或 pet_happy
     //    互動時短暫顯示 fx_heart（offset 喺寵物右上）
 }
@@ -78,6 +92,7 @@ Box(Modifier.fillMaxWidth().aspectRatio(160f / 96f)) {
 
 1. **底圖一層**：`LazyVerticalGrid`／自訂 `Grid`／`Canvas` 依地圖資料貼 tile。
 2. **圍欄一層**：獨立 overlay，唔同底圖 bake 死，方便之後改佈局。
-3. **寵物一層**：`Image`／`Sprite`；狀態切 `pet_idle` ↔ `pet_happy`，心心用 `AnimatedVisibility` 或短動畫。
+3. **Decor 一層**：屋／樹獨立擺位；`tree_shadow` 可選墊底；唔改獎勵／domain。
+4. **寵物一層**：`Image`／`Sprite`；狀態切 `pet_idle` ↔ `pet_happy`，心心用 `AnimatedVisibility` 或短動畫。
 
 現有 `FarmScreen` 仍可用 `tile_soil_empty`＋作物圖；本批係下一階俯視場景預留素材。

@@ -46,6 +46,13 @@ PATH_D = (0xA8, 0x88, 0x58, 255)
 WOOD = (0xB8, 0x7A, 0x48, 255)
 WOOD_L = (0xD4, 0xA0, 0x68, 255)
 WOOD_D = (0x8A, 0x5A, 0x32, 255)
+ROOF = (0xC7, 0x5B, 0x39, 255)      # brick-red roof
+ROOF_D = (0x9A, 0x3E, 0x28, 255)    # deep roof shade
+ROOF_L = (0xE0, 0x7A, 0x48, 255)    # warm orange highlight
+WALL = (0xF2, 0xE2, 0xC4, 255)      # cream plaster
+WALL_D = (0xD9, 0xC4, 0x9A, 255)
+LEAF_D = (0x3A, 0x62, 0x38, 255)    # deep foliage
+SHADOW = (0x6B, 0x4A, 0x2E, 90)     # soft brown translucent
 SKY = (0xA8, 0xD4, 0xE0, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
@@ -419,6 +426,201 @@ def fx_heart() -> Image.Image:
     return img
 
 
+# --- Decor: hut + trees (top-down / slight 3/4) -----------------------------
+
+def building_hut() -> Image.Image:
+    """Simple warm hut, 48×48, readable slight 3/4 (front + roof)."""
+    img = new_img(48, 48)
+    # ground shadow under footprint
+    for y in range(38, 46):
+        for x in range(8, 40):
+            if (x - 24) ** 2 / 220 + (y - 41) ** 2 / 20 <= 1:
+                px(img, x, y, (0x6B, 0x4A, 0x2E, 75))
+
+    # --- walls (front face) ---
+    fill_rect(img, 10, 24, 37, 40, WALL)
+    fill_rect(img, 10, 24, 12, 40, WALL_D)   # left shade
+    fill_rect(img, 35, 24, 37, 40, WALL_D)   # right shade
+    # wood sill / baseboard
+    fill_rect(img, 10, 38, 37, 40, WOOD)
+    hline(img, 10, 37, 37, WOOD_D)
+    # door (center)
+    fill_rect(img, 20, 28, 27, 40, WOOD_D)
+    fill_rect(img, 21, 29, 26, 39, WOOD)
+    fill_rect(img, 21, 29, 26, 30, WOOD_L)
+    px(img, 25, 34, GOLD)
+    rect_outline(img, 20, 28, 27, 40, OUTLINE)
+    # left window
+    fill_rect(img, 13, 28, 17, 33, SKY)
+    rect_outline(img, 13, 28, 17, 33, OUTLINE)
+    hline(img, 13, 17, 30, OUTLINE)
+    vline(img, 15, 28, 33, OUTLINE)
+    # right window
+    fill_rect(img, 30, 28, 34, 33, SKY)
+    rect_outline(img, 30, 28, 34, 33, OUTLINE)
+    hline(img, 30, 34, 30, OUTLINE)
+    vline(img, 32, 28, 33, OUTLINE)
+    # wall outline
+    rect_outline(img, 10, 24, 37, 40, OUTLINE)
+    # cream highlight patch
+    fill_rect(img, 14, 25, 17, 26, CREAM)
+
+    # --- pitched roof (slight 3/4: tall triangle over walls) ---
+    # back/top of roof peak down to eaves
+    for row in range(16):
+        # half-width grows as we go down
+        half = 1 + row
+        y = 8 + row
+        x0 = 24 - half
+        x1 = 24 + half
+        # stripe shingles
+        c = ROOF_L if row < 3 else (ROOF if row % 2 == 0 else ROOF_D)
+        fill_rect(img, x0, y, x1, y, c)
+        px(img, x0 - 1, y, OUTLINE)
+        px(img, x1 + 1, y, OUTLINE)
+    # wider eaves overhang over walls
+    for row in range(6):
+        half = 14 + row
+        y = 24 + row
+        x0 = 24 - half
+        x1 = 24 + half
+        c = ROOF if row % 2 == 0 else ROOF_D
+        if row >= 4:
+            c = ROOF_D
+        fill_rect(img, max(6, x0), y, min(41, x1), y, c)
+        px(img, max(5, x0 - 1), y, OUTLINE)
+        px(img, min(42, x1 + 1), y, OUTLINE)
+    # ridge tip
+    px(img, 24, 7, OUTLINE)
+    px(img, 23, 8, OUTLINE)
+    px(img, 25, 8, OUTLINE)
+    # horizontal eave beam
+    hline(img, 8, 39, 29, OUTLINE)
+    fill_rect(img, 9, 28, 38, 28, WOOD_D)
+
+    # chimney on right slope
+    fill_rect(img, 30, 10, 34, 18, STONE)
+    fill_rect(img, 30, 10, 34, 12, STONE_L)
+    fill_rect(img, 31, 13, 33, 17, WOOD_D)
+    rect_outline(img, 30, 10, 34, 18, OUTLINE)
+    # smoke puffs
+    px(img, 31, 8, STONE_L)
+    px(img, 33, 7, STONE_L)
+    px(img, 32, 6, STONE)
+    return img
+
+
+def tree_oak() -> Image.Image:
+    """Round oak canopy, 32×40 (written as 32×32 + canopy; use 32×40)."""
+    img = new_img(32, 40)
+    # soft shadow
+    for y in range(34, 39):
+        for x in range(8, 24):
+            if (x - 16) ** 2 / 64 + (y - 36) ** 2 / 9 <= 1:
+                px(img, x, y, (0x6B, 0x4A, 0x2E, 80))
+    # trunk
+    fill_rect(img, 14, 24, 17, 35, WOOD)
+    fill_rect(img, 14, 24, 15, 35, WOOD_D)
+    fill_rect(img, 16, 24, 17, 35, WOOD_L)
+    rect_outline(img, 14, 24, 17, 35, OUTLINE)
+    # canopy blobs (layered circles approximated by rects)
+    def blob(cx, cy, r, c):
+        for y in range(cy - r, cy + r + 1):
+            for x in range(cx - r, cx + r + 1):
+                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r + r // 2:
+                    px(img, x, y, c)
+    blob(16, 14, 10, MGREEN)
+    blob(10, 16, 7, SAGE)
+    blob(22, 16, 7, DGREEN)
+    blob(16, 10, 7, LGREEN)
+    blob(12, 12, 5, SAGE)
+    blob(20, 11, 5, MGREEN)
+    # highlights
+    for x, y in [(12, 8), (13, 9), (18, 7), (14, 11)]:
+        px(img, x, y, LGREEN)
+    # outline sparse rim
+    for x, y in [(16, 3), (8, 10), (6, 16), (10, 22), (22, 22), (26, 16), (24, 10)]:
+        px(img, x, y, OUTLINE)
+    return img
+
+
+def tree_pine() -> Image.Image:
+    """Pointy pine / fir, 32×40."""
+    img = new_img(32, 40)
+    for y in range(34, 39):
+        for x in range(10, 22):
+            if (x - 16) ** 2 / 36 + (y - 36) ** 2 / 9 <= 1:
+                px(img, x, y, (0x6B, 0x4A, 0x2E, 80))
+    # trunk
+    fill_rect(img, 14, 28, 17, 36, WOOD_D)
+    fill_rect(img, 15, 28, 16, 36, WOOD)
+    rect_outline(img, 14, 28, 17, 36, OUTLINE)
+    # triangular tiers
+    tiers = [
+        (4, 6, 16, DGREEN),
+        (10, 8, 14, MGREEN),
+        (16, 10, 12, SAGE),
+        (22, 7, 10, DGREEN),
+    ]
+    for top, half0, rows, base_c in tiers:
+        for i in range(rows):
+            half = half0 - i // 2
+            y = top + i
+            c = base_c
+            if i < 2:
+                c = LGREEN if base_c != DGREEN else SAGE
+            if i == rows - 1:
+                c = LEAF_D
+            fill_rect(img, 16 - half, y, 16 + half, y, c)
+            px(img, 16 - half - 1, y, OUTLINE)
+            px(img, 16 + half + 1, y, OUTLINE)
+    # tip
+    px(img, 16, 2, OUTLINE)
+    px(img, 16, 3, LGREEN)
+    px(img, 15, 4, SAGE)
+    px(img, 17, 4, SAGE)
+    return img
+
+
+def bush() -> Image.Image:
+    """Small round bush, 24×20."""
+    img = new_img(24, 20)
+    for y in range(15, 19):
+        for x in range(4, 20):
+            if (x - 12) ** 2 / 49 + (y - 17) ** 2 / 9 <= 1:
+                px(img, x, y, (0x6B, 0x4A, 0x2E, 70))
+    def blob(cx, cy, r, c):
+        for y in range(cy - r, cy + r + 1):
+            for x in range(cx - r, cx + r + 1):
+                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r:
+                    px(img, x, y, c)
+    blob(12, 10, 8, SAGE)
+    blob(7, 11, 5, MGREEN)
+    blob(17, 11, 5, DGREEN)
+    blob(12, 7, 5, LGREEN)
+    for x, y in [(9, 5), (10, 6), (14, 5)]:
+        px(img, x, y, LGREEN)
+    for x, y in [(4, 10), (12, 2), (20, 10), (6, 15), (18, 15)]:
+        px(img, x, y, OUTLINE)
+    return img
+
+
+def tree_shadow() -> Image.Image:
+    """Soft elliptical ground shadow for tree feet, 32×16."""
+    img = new_img(32, 16)
+    for y in range(16):
+        for x in range(32):
+            # ellipse centered
+            nx = (x - 15.5) / 14.0
+            ny = (y - 8.0) / 5.5
+            d = nx * nx + ny * ny
+            if d <= 1.0:
+                a = int(100 * (1.0 - d * 0.85))
+                if a > 0:
+                    px(img, x, y, (0x6B, 0x4A, 0x2E, min(a, 110)))
+    return img
+
+
 # --- Composite preview ------------------------------------------------------
 
 def farm_scene_preview() -> Image.Image:
@@ -439,6 +641,10 @@ def farm_scene_preview() -> Image.Image:
     fc_se = fence_corner("se")
     pet = pet_happy()
     heart = fx_heart()
+    hut = building_hut()
+    oak = tree_oak()
+    pine = tree_pine()
+    bush_img = bush()
 
     # Layer 0 — ground grid (5×3)
     for ty in range(3):
@@ -468,7 +674,13 @@ def farm_scene_preview() -> Image.Image:
     canvas.paste(fh, (80, 54), fh)
     canvas.paste(fc_se, (108, 50), fc_se)
 
-    # Layer 2 — pet sprite + heart FX
+    # Layer 2 — decor (hut + trees / bush)
+    canvas.paste(pine, (-4, 0), pine)
+    canvas.paste(oak, (128, -4), oak)
+    canvas.paste(bush_img, (118, 70), bush_img)
+    canvas.paste(hut, (2, 48), hut)
+
+    # Layer 3 — pet sprite + heart FX
     canvas.paste(pet, (64, 62), pet)
     canvas.paste(heart, (92, 50), heart)
     return canvas
@@ -494,6 +706,15 @@ GENERATORS_32 = {
     "fx_heart.png": fx_heart,
 }
 
+# Decor sprites (variable size; still PIL nearest-neighbor)
+GENERATORS_DECOR = {
+    "building_hut.png": building_hut,       # 48×48
+    "tree_oak.png": tree_oak,               # 32×40
+    "tree_pine.png": tree_pine,             # 32×40
+    "bush.png": bush,                       # 24×20
+    "tree_shadow.png": tree_shadow,         # 32×16
+}
+
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
@@ -509,6 +730,18 @@ def main() -> None:
         img.resize((256, 256), Image.NEAREST).save(PREVIEW / name)
         written.append(name)
         print(f"wrote {name}")
+
+    for name, gen in GENERATORS_DECOR.items():
+        img = gen()
+        path = OUT / name
+        img.save(path, "PNG")
+        # preview: scale ~8× keeping aspect
+        scale = max(1, 256 // max(img.size))
+        img.resize((img.size[0] * scale, img.size[1] * scale), Image.NEAREST).save(
+            PREVIEW / name
+        )
+        written.append(name)
+        print(f"wrote {name} {img.size[0]}x{img.size[1]}")
 
     preview = farm_scene_preview()
     assert preview.size == (160, 96)
