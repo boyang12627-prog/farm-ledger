@@ -401,9 +401,9 @@ private fun FarmFixture() {
         PlotUi(5, "空地", "種植", null, Color(0xFFE8D9B5), R.drawable.tile_soil_empty)
     )
     val crops = listOf(
-        Triple("小麥（示範節奏 1 分）", R.drawable.crop_wheat_seed, true),
-        Triple("紅蘿蔔（示範節奏 2 分）", R.drawable.crop_carrot_seed, false),
-        Triple("番茄（示範節奏 3 分）", R.drawable.crop_tomato_seed, false)
+        Triple("小麥（示範節奏 1 分）", R.drawable.crop_wheat_ready, true),
+        Triple("紅蘿蔔（示範節奏 2 分）", R.drawable.crop_carrot_ready, false),
+        Triple("番茄（示範節奏 3 分）", R.drawable.crop_tomato_ready, false)
     )
     Column(
         Modifier
@@ -494,7 +494,7 @@ private fun FarmFixture() {
                         Image(
                             painterResource(plot.icon),
                             contentDescription = plot.label,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(48.dp),
                             contentScale = ContentScale.FillBounds
                         )
                         Spacer(Modifier.height(4.dp))

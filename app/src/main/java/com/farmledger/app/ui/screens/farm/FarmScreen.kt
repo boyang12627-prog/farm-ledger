@@ -96,7 +96,7 @@ fun FarmScreen(vm: AppViewModel) {
                     label = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painterResource(cropSeedRes(c)),
+                                painterResource(cropReadyRes(c)),
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 contentScale = ContentScale.FillBounds
@@ -147,7 +147,7 @@ fun FarmScreen(vm: AppViewModel) {
                         Image(
                             painterResource(iconRes),
                             contentDescription = plot.state.name,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(48.dp),
                             contentScale = ContentScale.FillBounds
                         )
                         Spacer(Modifier.height(4.dp))
@@ -199,11 +199,6 @@ fun FarmScreen(vm: AppViewModel) {
     }
 }
 
-private fun cropSeedRes(kind: CropKind) = when (kind) {
-    CropKind.WHEAT -> R.drawable.crop_wheat_seed
-    CropKind.CARROT -> R.drawable.crop_carrot_seed
-    CropKind.TOMATO -> R.drawable.crop_tomato_seed
-}
 
 private fun cropGrowRes(kind: CropKind) = when (kind) {
     CropKind.WHEAT -> R.drawable.crop_wheat_grow
