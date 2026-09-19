@@ -17,3 +17,7 @@ bin/
 gen/
 out/
 release/
+
+__pycache__/
+*.pyc
+scripts/preview_assets/
