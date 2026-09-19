@@ -13,24 +13,44 @@
 - **時鐘倒退**：暫停每日／作物獎勵，**不刪除帳本**
 - **農田**：6 格田、3 種作物（小麥／紅蘿蔔／番茄）種植→等待→收成
 - **寵物**：餵食、互動、改名
-- **家居裝飾**：7 件佔位裝飾（暖色像素風）
+- **家居裝飾**：7 件佔位裝飾（暖色像素風；含小屋／樹木場景裝飾）
 - **匯出／匯入**：JSON 全量備份、CSV 帳目，經系統 SAF 檔案選擇器
 
-## 用 Android Studio 開啟
+## 安裝方式（離線 Debug APK）
+
+本 App **完全離線**：`AndroidManifest.xml` 不宣告 `INTERNET`／網絡權限。以下兩種安裝方式皆適用本機／實機／模擬器。
+
+### 方法一：用 Android Studio 開啟並執行
 
 1. 安裝 [Android Studio](https://developer.android.com/studio)（建議 Hedgehog／Iguana 或更新）
-2. `File → Open` 選本專案根目錄（含 `settings.gradle.kts`）
-3. 等待 Gradle Sync；若提示 JDK，選 **Temurin／JDK 17+**
-4. 建立／啟動一個 API 26+ 模擬器，或接上實機並開啟 USB 偵錯
-5. 按 Run ▶ 安裝 `app` 模組
+2. 選 **File → Open**，開啟本專案根目錄（須含 `settings.gradle.kts`）
+3. 等待 Gradle Sync 完成；若提示 JDK，選 **Temurin／JDK 17+**
+4. 建立或啟動一個 **API 26+** 模擬器，或接上實機並開啟 USB 偵錯
+5. 上方工具列選 `app` 模組，按 **Run ▶** 安裝並啟動
 
-指令列（本機已裝 Android SDK 時）：
+### 方法二：指令列組裝後用 adb 安裝
+
+本機已裝 Android SDK／`adb` 時，於專案根目錄執行：
 
 ```bash
 ./gradlew :app:assembleDebug
 ./gradlew :app:testDebugUnitTest
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+Debug APK 路徑（相對於專案根目錄）：
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+若已組裝完成，只需：
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+可玩里程碑說明見 [`PLAYABLE_MILESTONE.md`](PLAYABLE_MILESTONE.md)。
 
 ## 測試
 
@@ -53,11 +73,11 @@ Kotlin · Jetpack Compose · Material 3 · Navigation · ViewModel / StateFlow �
 
 ## 已知限制（MVP）
 
-- 尚未在此 CI／無頭環境打包出簽章 APK（需本機 Android SDK + 模擬器／實機）
 - 作物成長時間為示範用短倒數（1～3 分鐘），非真實農作節奏
 - 像素美術為色票／向量佔位，非最終素材
 - 匯入 CSV 只覆蓋帳目列，完整進度請用 JSON
 - 未做多語系切換（目前固定繁中）
+- 共用開發機／模擬器可能遇到鎖屏或無法自動解鎖，實機安裝較穩
 - `THIRD_PARTY_LICENSES.md` 為佔位，上架前請補齊依賴授權全文
 
 ## 權限說明
