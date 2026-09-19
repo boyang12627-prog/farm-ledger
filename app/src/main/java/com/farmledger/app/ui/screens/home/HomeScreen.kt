@@ -1,5 +1,6 @@
 package com.farmledger.app.ui.screens.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +39,9 @@ import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.theme.FarmGrowth
 import com.farmledger.app.ui.theme.FarmSelected
+import com.farmledger.app.ui.theme.FarmStroke
 import com.farmledger.app.ui.theme.FarmText
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +58,8 @@ fun HomeScreen(
     val progress by vm.progress.collectAsState()
     val plots by vm.plots.collectAsState()
     val pet by vm.pet.collectAsState()
+    val today = LocalDate.now().toString()
+    val todaySettled = progress.lastSettleDate == today
     Column(
         Modifier
             .fillMaxSize()
@@ -71,6 +77,12 @@ fun HomeScreen(
             }
             Spacer(Modifier.height(8.dp))
         }
+        DailySettleStatusCard(
+            todaySettled = todaySettled,
+            streakDays = progress.streakDays,
+            onSettle = onSettle
+        )
+        Spacer(Modifier.height(12.dp))
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -153,6 +165,102 @@ fun HomeScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             TextButton(onClick = onPet) { Text("寵物") }
             TextButton(onClick = onDecor) { Text("家居裝飾") }
+        }
+    }
+}
+
+/** Prominent daily-return cue: unsettled vs settled. Does not change reward rules. */
+@Composable
+private fun DailySettleStatusCard(
+    todaySettled: Boolean,
+    streakDays: Int,
+    onSettle: () -> Unit
+) {
+    if (todaySettled) {
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            border = BorderStroke(1.dp, FarmGrowth.copy(alpha = 0.55f))
+        ) {
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painterResource(R.drawable.ic_growth_point),
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "今日已結算 ✓",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = FarmText
+                    )
+                    Text(
+                        "連續 ${streakDays} 日 · 明日再回來領固定 +${RewardRules.DAILY_GROWTH_POINTS} 點",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FarmText
+                    )
+                }
+            }
+        }
+    } else {
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = FarmSelected.copy(alpha = 0.35f)),
+            border = BorderStroke(2.dp, FarmSelected),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painterResource(R.drawable.ic_cta_settle),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "今日未結算",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = FarmText
+                        )
+                        Text(
+                            "記帳後結算，固定 +${RewardRules.DAILY_GROWTH_POINTS} 成長點（每日一次）",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = FarmText
+                        )
+                    }
+                }
+                Text(
+                    if (streakDays > 0) {
+                        "保持連續 ${streakDays} 日，唔好斷線呀！"
+                    } else {
+                        "每日回來結算，養成小農場習慣。"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = FarmStroke
+                )
+                Button(
+                    onClick = onSettle,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = FarmSelected,
+                        contentColor = FarmText
+                    )
+                ) {
+                    Text("去結算，領今日成長點", style = MaterialTheme.typography.titleSmall)
+                }
+            }
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.farmledger.app.ui.screenshot
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -55,6 +59,7 @@ import com.farmledger.app.ui.theme.FarmIncome
 import com.farmledger.app.ui.theme.FarmLedgerTheme
 import com.farmledger.app.ui.theme.FarmSelected
 import com.farmledger.app.ui.theme.FarmSoil
+import com.farmledger.app.ui.theme.FarmStroke
 import com.farmledger.app.ui.theme.FarmText
 import com.farmledger.app.ui.theme.WarmCream
 import org.junit.Rule
@@ -115,6 +120,54 @@ private fun HomeFixture() {
     ) {
         Text("主頁", style = MaterialTheme.typography.headlineMedium, color = FarmText)
         Spacer(Modifier.height(8.dp))
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = FarmSelected.copy(alpha = 0.35f)),
+            border = BorderStroke(2.dp, FarmSelected),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painterResource(R.drawable.ic_cta_settle),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "今日未結算",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = FarmText
+                        )
+                        Text(
+                            "記帳後結算，固定 +${RewardRules.DAILY_GROWTH_POINTS} 成長點（每日一次）",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = FarmText
+                        )
+                    }
+                }
+                Text(
+                    "保持連續 3 日，唔好斷線呀！",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = FarmStroke
+                )
+                Button(
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = FarmSelected,
+                        contentColor = FarmText
+                    )
+                ) {
+                    Text("去結算，領今日成長點", style = MaterialTheme.typography.titleSmall)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -472,18 +525,44 @@ private fun FarmFixture() {
             }
         }
         Spacer(Modifier.height(8.dp))
-        FarmSceneLayer(modifier = Modifier.fillMaxWidth(), interactive = false)
-        Spacer(Modifier.height(8.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        val farmPanelGrass = Color(0xFFC5D99A)
+        val farmPanelDirt = Color(0xFFD9C48A)
+        Card(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = farmPanelGrass),
+            border = BorderStroke(2.dp, FarmStroke.copy(alpha = 0.65f)),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
+            Column(Modifier.fillMaxSize()) {
+                FarmSceneLayer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
+                    interactive = false
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .background(farmPanelDirt)
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(farmPanelDirt)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
             items(plots, key = { it.index }) { plot ->
                 Card(
                     Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = plot.cardColor)
+                    colors = CardDefaults.cardColors(containerColor = plot.cardColor),
+                    border = BorderStroke(1.dp, FarmStroke.copy(alpha = 0.35f)),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Column(
                         Modifier.padding(8.dp),
@@ -549,6 +628,8 @@ private fun FarmFixture() {
                         }
                     }
                 }
+            }
+        }
             }
         }
     }
