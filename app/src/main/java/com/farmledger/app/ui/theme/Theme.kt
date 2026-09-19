@@ -7,38 +7,52 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Warm pixel palette placeholders
-val SoilBrown = Color(0xFF8B6914)
-val WarmCream = Color(0xFFF4E8C8)
-val LeafGreen = Color(0xFF6B8F4E)
-val SoftTerracotta = Color(0xFFC4785A)
+// Pixel farm palette (像素美術管家)
+val FarmBg = Color(0xFFFFF8E7)
+val FarmStroke = Color(0xFF6B4A2E)
+val FarmText = Color(0xFF6B4A2E)
+val FarmGrowth = Color(0xFF8FBF6A)
+val FarmIncome = Color(0xFF4F7A45)
+val FarmExpense = Color(0xFFC75B39)
+val FarmSelected = Color(0xFFE8A838) // replaces pink
+val FarmSoil = Color(0xFF8B6914)
+
+// Aliases for existing call sites / older names
+val SoilBrown = FarmSoil
+val WarmCream = FarmBg
+val LeafGreen = FarmGrowth
+val SoftTerracotta = FarmExpense
 val SkyMist = Color(0xFFA8C5D4)
-val PixelGold = Color(0xFFD4A84B)
-val InkBrown = Color(0xFF3E2F1C)
+val PixelGold = FarmSelected
+val InkBrown = FarmText
 
 private val LightColors = lightColorScheme(
-    primary = LeafGreen,
+    primary = FarmGrowth,
     onPrimary = Color.White,
-    secondary = SoftTerracotta,
-    onSecondary = Color.White,
-    tertiary = PixelGold,
-    background = WarmCream,
-    onBackground = InkBrown,
-    surface = Color(0xFFFFF8EC),
-    onSurface = InkBrown,
+    secondary = FarmSelected,
+    onSecondary = FarmText,
+    tertiary = FarmIncome,
+    background = FarmBg,
+    onBackground = FarmText,
+    surface = Color(0xFFFFFBF0),
+    onSurface = FarmText,
     surfaceVariant = Color(0xFFE8D9B5),
-    primaryContainer = Color(0xFFC5D9A8),
-    secondaryContainer = Color(0xFFF0C9B8)
+    primaryContainer = Color(0xFFD4E8C0),
+    onPrimaryContainer = FarmText,
+    secondaryContainer = Color(0xFFF5D9A0),
+    onSecondaryContainer = FarmText,
+    error = FarmExpense,
+    onError = Color.White
 )
 
 private val DarkColors = darkColorScheme(
-    primary = LeafGreen,
+    primary = FarmGrowth,
     onPrimary = Color.White,
-    secondary = SoftTerracotta,
+    secondary = FarmSelected,
     background = Color(0xFF2A2418),
-    onBackground = WarmCream,
+    onBackground = FarmBg,
     surface = Color(0xFF3A3224),
-    onSurface = WarmCream
+    onSurface = FarmBg
 )
 
 @Composable

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#F4E8C8</color>
+    <color name="farm_bg">#FFF8E7</color>
+    <color name="farm_stroke">#6B4A2E</color>
+    <color name="farm_text">#6B4A2E</color>
+    <color name="farm_growth">#8FBF6A</color>
+    <color name="farm_income">#4F7A45</color>
+    <color name="farm_expense">#C75B39</color>
+    <color name="farm_selected">#E8A838</color>
+    <color name="farm_soil">#8B6914</color>
+    <color name="ic_launcher_background">#FFF8E7</color>
 </resources>
