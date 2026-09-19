@@ -37,7 +37,8 @@ private const val Tile = 32f
 private const val HappyMs = 1_400L
 
 /**
- * Warm top-down farm ground + fence border + Sprout（小芽）pet overlay.
+ * Warm top-down farm ground + fence + hut/tree decor + Sprout（小芽）pet overlay.
+ * Minecraft-inspired blocky readability; nearest-neighbor scaling.
  * Pure UI — does not touch reward / pet domain rules.
  */
 @Composable
@@ -70,6 +71,11 @@ fun FarmSceneLayer(
     val cornerNe = ImageBitmap.imageResource(R.drawable.fence_corner_ne)
     val cornerSw = ImageBitmap.imageResource(R.drawable.fence_corner_sw)
     val cornerSe = ImageBitmap.imageResource(R.drawable.fence_corner_se)
+    val hut = ImageBitmap.imageResource(R.drawable.building_hut)
+    val treeOak = ImageBitmap.imageResource(R.drawable.tree_oak)
+    val treePine = ImageBitmap.imageResource(R.drawable.tree_pine)
+    val treeShadow = ImageBitmap.imageResource(R.drawable.tree_shadow)
+    val bush = ImageBitmap.imageResource(R.drawable.bush)
     val petIdle = ImageBitmap.imageResource(R.drawable.pet_idle)
     val petHappy = ImageBitmap.imageResource(R.drawable.pet_happy)
     val heart = ImageBitmap.imageResource(R.drawable.fx_heart)
@@ -124,9 +130,21 @@ fun FarmSceneLayer(
             drawPixelTile(fenceHBmp, 48f * sx, 54f * sy, Tile * sx, Tile * sy)
             drawPixelTile(fenceHBmp, 80f * sx, 54f * sy, Tile * sx, Tile * sy)
             drawPixelTile(cornerSe, 108f * sx, 50f * sy, Tile * sx, Tile * sy)
+
+            // Layer 2 — decor (shadows under trees, then hut / trees / bush)
+            // Coordinates match docs/farm_scene_preview.png (logical 160×96).
+            fun decor(bmp: ImageBitmap, lx: Float, ly: Float, lw: Float, lh: Float) {
+                drawPixelTile(bmp, lx * sx, ly * sy, lw * sx, lh * sy)
+            }
+            decor(treeShadow, -4f, 28f, 32f, 16f)
+            decor(treeShadow, 128f, 24f, 32f, 16f)
+            decor(treePine, -4f, 0f, 32f, 40f)
+            decor(treeOak, 128f, -4f, 32f, 40f)
+            decor(bush, 118f, 70f, 24f, 20f)
+            decor(hut, 2f, 48f, 48f, 48f)
         }
 
-        // Layer 2 — Sprout（小芽）+ heart FX (Compose Image for tap hit-testing)
+        // Layer 3 — Sprout（小芽）+ heart FX (Compose Image for tap hit-testing)
         val petMod = Modifier
             .align(Alignment.TopStart)
             .offset(

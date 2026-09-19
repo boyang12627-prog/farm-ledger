@@ -121,7 +121,7 @@ fun FarmScreen(vm: AppViewModel) {
             }
         }
         Spacer(Modifier.height(8.dp))
-        // Phase-2 farm scene (tiles + fence + 小芽) under the crop-plot UI block.
+        // Phase-2 farm scene (tiles + fence + hut/trees + 小芽) under the crop-plot UI block.
         Column(Modifier.weight(1f).fillMaxWidth()) {
             FarmSceneLayer(modifier = Modifier.fillMaxWidth(), interactive = true)
             Spacer(Modifier.height(8.dp))
