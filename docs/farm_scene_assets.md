@@ -2,6 +2,8 @@
 
 暖色像素農田下一階場景感用圖，全部以 `scripts/gen_farm_scene_assets.py`（PIL nearest-neighbor）自繪，**非**星露谷或其他第三方 tileset。
 
+**Style note:** Minecraft-inspired readability, 2D top-down — big flat color blocks, clear dark outlines, few mid-tones; **not** a 3D voxel/block world.
+
 重新產生：
 
 ```bash
@@ -50,11 +52,11 @@ python3 scripts/gen_farm_scene_assets.py
 
 | 檔名 | 尺寸 | 用途 |
 |------|------|------|
-| `building_hut.png` | 48×48 | 簡易屋（微俯視／正面可讀，磚紅屋頂） |
-| `tree_oak.png` | 32×40 | 圓冠橡樹 |
-| `tree_pine.png` | 32×40 | 層疊松樹 |
+| `building_hut.png` | 48×48 | 簡易屋（2D 俯視可讀正面＋屋頂；大方塊色＋深輪廓） |
+| `tree_oak.png` | 32×40 | 圓冠橡樹（chunky canopy＋dark outline） |
+| `tree_pine.png` | 32×40 | 層疊松樹（flat tiers＋dark outline） |
 | `bush.png` | 24×20 | 小樹叢（可選） |
-| `tree_shadow.png` | 32×16 | 樹腳柔邊陰影（可選，疊喺 decor 下） |
+| `tree_shadow.png` | 32×16 | 樹腳硬像素陰影（可選，疊喺 decor 下） |
 
 ### 合成預覽
 
@@ -62,7 +64,7 @@ python3 scripts/gen_farm_scene_assets.py
 |------|------|
 | `farm_scene_preview.png` | 160×96（草泥＋圍欄＋小芽＋屋＋樹） |
 
-色板：奶油底、泥啡、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`。
+色板：奶油底、泥啡、鼠尾草／綠、磚紅／深橙屋頂、木色、描邊 `#6B4A2E`；decor 加深輪廓 `#3D2A18`（Minecraft-inspired readability, 2D top-down）。
 
 ## 建議 Compose 接法（四層）
 

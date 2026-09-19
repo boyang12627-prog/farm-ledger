@@ -2,7 +2,9 @@
 """Generate self-drawn warm-farm top-down scene PNGs (32px tiles/sprites).
 
 Commercial-use original pixel art for the next-stage overhead farm scene.
-Uses PIL nearest-neighbor only — no external tilesets (not Stardew assets).
+Minecraft-inspired readability (big color blocks, dark outlines, few mid-tones),
+still 2D top-down — not a 3D voxel world.
+Uses PIL nearest-neighbor only — no external tilesets.
 
 Outputs land in app/src/main/res/drawable-nodpi/ plus an optional scene preview.
 See docs/farm_scene_assets.md for filenames and suggested Compose layering.
@@ -25,6 +27,7 @@ SOIL_L = (0xD9, 0xB4, 0x8C, 255)
 SOIL_M = (0xC4, 0x96, 0x6A, 255)
 SOIL_D = (0xA6, 0x7C, 0x52, 255)
 OUTLINE = (0x6B, 0x4A, 0x2E, 255)  # #6B4A2E
+DECOR_OUTLINE = (0x3D, 0x2A, 0x18, 255)  # darker rim for hut/trees (MC readability)
 STONE = (0x8A, 0x7A, 0x68, 255)
 STONE_L = (0xC8, 0xBC, 0xA8, 255)
 LGREEN = (0xB8, 0xD9, 0x7A, 255)
@@ -51,7 +54,7 @@ ROOF_D = (0x9A, 0x3E, 0x28, 255)    # deep roof shade
 ROOF_L = (0xE0, 0x7A, 0x48, 255)    # warm orange highlight
 WALL = (0xF2, 0xE2, 0xC4, 255)      # cream plaster
 WALL_D = (0xD9, 0xC4, 0x9A, 255)
-LEAF_D = (0x3A, 0x62, 0x38, 255)    # deep foliage
+LEAF_D = (0x2E, 0x52, 0x2C, 255)    # deep foliage (high contrast)
 SHADOW = (0x6B, 0x4A, 0x2E, 90)     # soft brown translucent
 SKY = (0xA8, 0xD4, 0xE0, 255)
 TRANSPARENT = (0, 0, 0, 0)
@@ -426,198 +429,224 @@ def fx_heart() -> Image.Image:
     return img
 
 
-# --- Decor: hut + trees (top-down / slight 3/4) -----------------------------
+# --- Decor: hut + trees (Minecraft-inspired readability, 2D top-down) -----
+# Big flat color blocks, clear dark outlines, few mid-tones.
+# Still 2D overhead farm sprites — NOT a 3D voxel/block world.
+
+def _outline_blob(img, filled_coords, outline_c=DECOR_OUTLINE) -> None:
+    """Draw a 1px dark outline around an opaque silhouette."""
+    pts = set(filled_coords)
+    for x, y in pts:
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            nx, ny = x + dx, y + dy
+            if (nx, ny) not in pts:
+                px(img, nx, ny, outline_c)
+
 
 def building_hut() -> Image.Image:
-    """Simple warm hut, 48×48, readable slight 3/4 (front + roof)."""
+    """Blocky warm hut, 48×48 — readable 2D top-down (roof + front), MC contrast."""
     img = new_img(48, 48)
-    # ground shadow under footprint
-    for y in range(38, 46):
-        for x in range(8, 40):
-            if (x - 24) ** 2 / 220 + (y - 41) ** 2 / 20 <= 1:
-                px(img, x, y, (0x6B, 0x4A, 0x2E, 75))
+    # hard pixel shadow (no soft gradient)
+    for y in range(40, 46):
+        for x in range(10, 38):
+            if abs(x - 24) + abs(y - 42) * 2 <= 16:
+                px(img, x, y, (0x3D, 0x2A, 0x18, 120))
 
-    # --- walls (front face) ---
-    fill_rect(img, 10, 24, 37, 40, WALL)
-    fill_rect(img, 10, 24, 12, 40, WALL_D)   # left shade
-    fill_rect(img, 35, 24, 37, 40, WALL_D)   # right shade
-    # wood sill / baseboard
-    fill_rect(img, 10, 38, 37, 40, WOOD)
-    hline(img, 10, 37, 37, WOOD_D)
-    # door (center)
-    fill_rect(img, 20, 28, 27, 40, WOOD_D)
-    fill_rect(img, 21, 29, 26, 39, WOOD)
-    fill_rect(img, 21, 29, 26, 30, WOOD_L)
-    px(img, 25, 34, GOLD)
-    rect_outline(img, 20, 28, 27, 40, OUTLINE)
-    # left window
-    fill_rect(img, 13, 28, 17, 33, SKY)
-    rect_outline(img, 13, 28, 17, 33, OUTLINE)
-    hline(img, 13, 17, 30, OUTLINE)
-    vline(img, 15, 28, 33, OUTLINE)
-    # right window
-    fill_rect(img, 30, 28, 34, 33, SKY)
-    rect_outline(img, 30, 28, 34, 33, OUTLINE)
-    hline(img, 30, 34, 30, OUTLINE)
-    vline(img, 32, 28, 33, OUTLINE)
-    # wall outline
-    rect_outline(img, 10, 24, 37, 40, OUTLINE)
-    # cream highlight patch
-    fill_rect(img, 14, 25, 17, 26, CREAM)
+    # --- walls: big cream block ---
+    fill_rect(img, 10, 26, 37, 41, WALL)
+    # single shade strip (not mid-gray wash)
+    fill_rect(img, 10, 26, 11, 41, WALL_D)
+    fill_rect(img, 36, 26, 37, 41, WALL_D)
+    # wood baseboard — thick
+    fill_rect(img, 10, 39, 37, 41, WOOD)
+    hline(img, 10, 37, 38, WOOD_D)
+    # door — solid wood block
+    fill_rect(img, 20, 30, 27, 41, WOOD_D)
+    fill_rect(img, 21, 31, 26, 40, WOOD)
+    px(img, 25, 35, GOLD)
+    rect_outline(img, 20, 30, 27, 41, DECOR_OUTLINE)
+    # windows — flat sky panes, thick cross
+    fill_rect(img, 12, 30, 17, 35, SKY)
+    rect_outline(img, 12, 30, 17, 35, DECOR_OUTLINE)
+    hline(img, 12, 17, 32, DECOR_OUTLINE)
+    vline(img, 14, 30, 35, DECOR_OUTLINE)
+    fill_rect(img, 30, 30, 35, 35, SKY)
+    rect_outline(img, 30, 30, 35, 35, DECOR_OUTLINE)
+    hline(img, 30, 35, 32, DECOR_OUTLINE)
+    vline(img, 32, 30, 35, DECOR_OUTLINE)
+    rect_outline(img, 10, 26, 37, 41, DECOR_OUTLINE)
 
-    # --- pitched roof (slight 3/4: tall triangle over walls) ---
-    # back/top of roof peak down to eaves
-    for row in range(16):
-        # half-width grows as we go down
-        half = 1 + row
-        y = 8 + row
+    # --- pitched roof: large flat brick-red slabs (few tones) ---
+    # upper triangle — solid ROOF / ROOF_D bands only
+    for row in range(0, 18):
+        half = 2 + row
+        y = 7 + row
         x0 = 24 - half
         x1 = 24 + half
-        # stripe shingles
-        c = ROOF_L if row < 3 else (ROOF if row % 2 == 0 else ROOF_D)
+        c = ROOF_L if row < 4 else (ROOF if (row // 3) % 2 == 0 else ROOF_D)
         fill_rect(img, x0, y, x1, y, c)
-        px(img, x0 - 1, y, OUTLINE)
-        px(img, x1 + 1, y, OUTLINE)
-    # wider eaves overhang over walls
-    for row in range(6):
-        half = 14 + row
-        y = 24 + row
-        x0 = 24 - half
-        x1 = 24 + half
-        c = ROOF if row % 2 == 0 else ROOF_D
-        if row >= 4:
-            c = ROOF_D
-        fill_rect(img, max(6, x0), y, min(41, x1), y, c)
-        px(img, max(5, x0 - 1), y, OUTLINE)
-        px(img, min(42, x1 + 1), y, OUTLINE)
-    # ridge tip
-    px(img, 24, 7, OUTLINE)
-    px(img, 23, 8, OUTLINE)
-    px(img, 25, 8, OUTLINE)
-    # horizontal eave beam
-    hline(img, 8, 39, 29, OUTLINE)
-    fill_rect(img, 9, 28, 38, 28, WOOD_D)
+        px(img, x0 - 1, y, DECOR_OUTLINE)
+        px(img, x1 + 1, y, DECOR_OUTLINE)
+    # eaves overhang — one dark band
+    for row in range(5):
+        half = 15 + row
+        y = 25 + row
+        x0 = max(5, 24 - half)
+        x1 = min(42, 24 + half)
+        c = ROOF if row < 2 else ROOF_D
+        fill_rect(img, x0, y, x1, y, c)
+        px(img, x0 - 1, y, DECOR_OUTLINE)
+        px(img, x1 + 1, y, DECOR_OUTLINE)
+    # ridge
+    px(img, 24, 6, DECOR_OUTLINE)
+    fill_rect(img, 23, 7, 25, 8, ROOF_L)
+    # eave beam
+    fill_rect(img, 8, 29, 39, 30, WOOD_D)
+    hline(img, 7, 40, 28, DECOR_OUTLINE)
+    hline(img, 7, 40, 31, DECOR_OUTLINE)
 
-    # chimney on right slope
-    fill_rect(img, 30, 10, 34, 18, STONE)
-    fill_rect(img, 30, 10, 34, 12, STONE_L)
-    fill_rect(img, 31, 13, 33, 17, WOOD_D)
-    rect_outline(img, 30, 10, 34, 18, OUTLINE)
-    # smoke puffs
-    px(img, 31, 8, STONE_L)
-    px(img, 33, 7, STONE_L)
-    px(img, 32, 6, STONE)
+    # chimney — chunky stone block
+    fill_rect(img, 31, 9, 36, 18, STONE)
+    fill_rect(img, 31, 9, 36, 11, STONE_L)
+    fill_rect(img, 32, 12, 35, 17, WOOD_D)
+    rect_outline(img, 31, 9, 36, 18, DECOR_OUTLINE)
+    # blocky smoke (no soft puffs)
+    fill_rect(img, 32, 5, 34, 7, STONE_L)
+    px(img, 33, 4, STONE_L)
     return img
 
 
 def tree_oak() -> Image.Image:
-    """Round oak canopy, 32×40 (written as 32×32 + canopy; use 32×40)."""
+    """Chunky round oak, 32×40 — big canopy blocks + dark rim, 2D top-down readable."""
     img = new_img(32, 40)
-    # soft shadow
-    for y in range(34, 39):
-        for x in range(8, 24):
-            if (x - 16) ** 2 / 64 + (y - 36) ** 2 / 9 <= 1:
-                px(img, x, y, (0x6B, 0x4A, 0x2E, 80))
-    # trunk
-    fill_rect(img, 14, 24, 17, 35, WOOD)
-    fill_rect(img, 14, 24, 15, 35, WOOD_D)
-    fill_rect(img, 16, 24, 17, 35, WOOD_L)
-    rect_outline(img, 14, 24, 17, 35, OUTLINE)
-    # canopy blobs (layered circles approximated by rects)
-    def blob(cx, cy, r, c):
-        for y in range(cy - r, cy + r + 1):
-            for x in range(cx - r, cx + r + 1):
-                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r + r // 2:
-                    px(img, x, y, c)
-    blob(16, 14, 10, MGREEN)
-    blob(10, 16, 7, SAGE)
-    blob(22, 16, 7, DGREEN)
-    blob(16, 10, 7, LGREEN)
-    blob(12, 12, 5, SAGE)
-    blob(20, 11, 5, MGREEN)
-    # highlights
-    for x, y in [(12, 8), (13, 9), (18, 7), (14, 11)]:
-        px(img, x, y, LGREEN)
-    # outline sparse rim
-    for x, y in [(16, 3), (8, 10), (6, 16), (10, 22), (22, 22), (26, 16), (24, 10)]:
-        px(img, x, y, OUTLINE)
+    # hard shadow under trunk
+    fill_rect(img, 10, 35, 21, 38, (0x3D, 0x2A, 0x18, 110))
+    hline(img, 12, 19, 34, (0x3D, 0x2A, 0x18, 90))
+
+    # trunk — thick wood block
+    fill_rect(img, 13, 24, 18, 36, WOOD)
+    fill_rect(img, 13, 24, 14, 36, WOOD_D)
+    rect_outline(img, 13, 24, 18, 36, DECOR_OUTLINE)
+
+    # canopy: few large rect/blob regions (MGREEN / SAGE / DGREEN only)
+    filled = []
+
+    def put_leaf(x, y, c):
+        px(img, x, y, c)
+        filled.append((x, y))
+
+    def blob(cx, cy, rx, ry, c):
+        for y in range(cy - ry, cy + ry + 1):
+            for x in range(cx - rx, cx + rx + 1):
+                if ((x - cx) / max(rx, 1)) ** 2 + ((y - cy) / max(ry, 1)) ** 2 <= 1.05:
+                    put_leaf(x, y, c)
+
+    # base dark mass
+    blob(16, 16, 11, 10, MGREEN)
+    # side blocks
+    blob(8, 17, 6, 6, DGREEN)
+    blob(24, 17, 6, 6, DGREEN)
+    # top highlight block (one light tone only)
+    blob(16, 10, 7, 6, SAGE)
+    # tiny LGREEN patch — not speckled
+    fill_rect(img, 13, 8, 18, 11, LGREEN)
+    for y in range(8, 12):
+        for x in range(13, 19):
+            filled.append((x, y))
+    # clear dark outline around canopy
+    _outline_blob(img, filled, DECOR_OUTLINE)
     return img
 
 
 def tree_pine() -> Image.Image:
-    """Pointy pine / fir, 32×40."""
+    """Layered pine, 32×40 — flat tier triangles, thick outline, few greens."""
     img = new_img(32, 40)
-    for y in range(34, 39):
-        for x in range(10, 22):
-            if (x - 16) ** 2 / 36 + (y - 36) ** 2 / 9 <= 1:
-                px(img, x, y, (0x6B, 0x4A, 0x2E, 80))
+    fill_rect(img, 11, 35, 20, 38, (0x3D, 0x2A, 0x18, 110))
+
     # trunk
-    fill_rect(img, 14, 28, 17, 36, WOOD_D)
-    fill_rect(img, 15, 28, 16, 36, WOOD)
-    rect_outline(img, 14, 28, 17, 36, OUTLINE)
-    # triangular tiers
+    fill_rect(img, 14, 29, 17, 37, WOOD_D)
+    fill_rect(img, 15, 29, 16, 37, WOOD)
+    rect_outline(img, 14, 29, 17, 37, DECOR_OUTLINE)
+
+    filled = []
+
+    def put(x, y, c):
+        px(img, x, y, c)
+        filled.append((x, y))
+
+    # three chunky tiers (wide → narrow), 2 colors each
     tiers = [
-        (4, 6, 16, DGREEN),
-        (10, 8, 14, MGREEN),
-        (16, 10, 12, SAGE),
-        (22, 7, 10, DGREEN),
+        # (top_y, rows, max_half, fill, shade)
+        (20, 10, 11, MGREEN, DGREEN),
+        (12, 10, 8, SAGE, MGREEN),
+        (4, 9, 5, LGREEN, SAGE),
     ]
-    for top, half0, rows, base_c in tiers:
+    for top, rows, max_half, fill_c, shade_c in tiers:
         for i in range(rows):
-            half = half0 - i // 2
+            # step half every 2 rows → blocky silhouette
+            half = max_half - (i // 2)
+            if half < 1:
+                half = 1
             y = top + i
-            c = base_c
-            if i < 2:
-                c = LGREEN if base_c != DGREEN else SAGE
-            if i == rows - 1:
-                c = LEAF_D
-            fill_rect(img, 16 - half, y, 16 + half, y, c)
-            px(img, 16 - half - 1, y, OUTLINE)
-            px(img, 16 + half + 1, y, OUTLINE)
-    # tip
-    px(img, 16, 2, OUTLINE)
-    px(img, 16, 3, LGREEN)
-    px(img, 15, 4, SAGE)
-    px(img, 17, 4, SAGE)
+            c = fill_c if i < rows // 2 else shade_c
+            for x in range(16 - half, 16 + half + 1):
+                put(x, y, c)
+    # tip block
+    put(16, 2, LGREEN)
+    put(15, 3, LGREEN)
+    put(16, 3, LGREEN)
+    put(17, 3, LGREEN)
+    put(16, 1, DECOR_OUTLINE)
+    _outline_blob(img, filled, DECOR_OUTLINE)
     return img
 
 
 def bush() -> Image.Image:
-    """Small round bush, 24×20."""
+    """Small chunky bush, 24×20 — big green blocks + dark rim."""
     img = new_img(24, 20)
-    for y in range(15, 19):
-        for x in range(4, 20):
-            if (x - 12) ** 2 / 49 + (y - 17) ** 2 / 9 <= 1:
-                px(img, x, y, (0x6B, 0x4A, 0x2E, 70))
-    def blob(cx, cy, r, c):
-        for y in range(cy - r, cy + r + 1):
-            for x in range(cx - r, cx + r + 1):
-                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r:
-                    px(img, x, y, c)
-    blob(12, 10, 8, SAGE)
-    blob(7, 11, 5, MGREEN)
-    blob(17, 11, 5, DGREEN)
-    blob(12, 7, 5, LGREEN)
-    for x, y in [(9, 5), (10, 6), (14, 5)]:
-        px(img, x, y, LGREEN)
-    for x, y in [(4, 10), (12, 2), (20, 10), (6, 15), (18, 15)]:
-        px(img, x, y, OUTLINE)
+    fill_rect(img, 5, 16, 18, 18, (0x3D, 0x2A, 0x18, 100))
+
+    filled = []
+
+    def put(x, y, c):
+        px(img, x, y, c)
+        filled.append((x, y))
+
+    def blob(cx, cy, rx, ry, c):
+        for y in range(cy - ry, cy + ry + 1):
+            for x in range(cx - rx, cx + rx + 1):
+                if ((x - cx) / max(rx, 1)) ** 2 + ((y - cy) / max(ry, 1)) ** 2 <= 1.0:
+                    put(x, y, c)
+
+    blob(12, 10, 9, 7, SAGE)
+    blob(6, 11, 5, 5, DGREEN)
+    blob(18, 11, 5, 5, MGREEN)
+    # one highlight block
+    fill_rect(img, 9, 5, 14, 8, LGREEN)
+    for y in range(5, 9):
+        for x in range(9, 15):
+            filled.append((x, y))
+    _outline_blob(img, filled, DECOR_OUTLINE)
     return img
 
 
 def tree_shadow() -> Image.Image:
-    """Soft elliptical ground shadow for tree feet, 32×16."""
+    """Hard pixel ellipse shadow, 32×16 — stepped alpha, no soft blur."""
     img = new_img(32, 16)
     for y in range(16):
         for x in range(32):
-            # ellipse centered
-            nx = (x - 15.5) / 14.0
-            ny = (y - 8.0) / 5.5
+            nx = abs(x - 15.5) / 14.0
+            ny = abs(y - 7.5) / 5.0
             d = nx * nx + ny * ny
-            if d <= 1.0:
-                a = int(100 * (1.0 - d * 0.85))
-                if a > 0:
-                    px(img, x, y, (0x6B, 0x4A, 0x2E, min(a, 110)))
+            if d <= 0.45:
+                a = 130
+            elif d <= 0.75:
+                a = 90
+            elif d <= 1.0:
+                a = 55
+            else:
+                continue
+            px(img, x, y, (0x3D, 0x2A, 0x18, a))
     return img
 
 
