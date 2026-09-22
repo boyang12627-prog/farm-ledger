@@ -6,7 +6,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA | （見本檔更新後 git rev-parse HEAD） |
+| Commit SHA | `6f0a8598948eaa02d737679b93f95c1eafc31633`（短：`6f0a859`） |
 | 說明 | M3：夜結儀式 UX＋背包飼料餵食（開心／進食反饋） |
 | 前身 M2 | `393f781`／記錄 `7636a66` |
 | 分支 | `main` |
@@ -50,5 +50,5 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## 基準提交記錄
 
-- M3 night-settle + inventory feed：（push 後回填）
+- M3 night-settle + inventory feed：`6f0a859`（2026-09-22）
 - M2 art+inventory：`393f781`（2026-09-22）
