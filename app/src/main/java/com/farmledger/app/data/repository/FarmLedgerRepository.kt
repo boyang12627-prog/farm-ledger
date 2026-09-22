@@ -115,7 +115,15 @@ class FarmLedgerRepository(
         val stage = FarmStageLogic.stageFor(progress.totalSettleDays)
         val now = System.currentTimeMillis()
         val current = ensureGameDay(now)
-        val result = DayPhaseLogic.sleepToNextDay(current, progress.clockPaused, now, stage)
+        val today = LocalDate.now().toString()
+        val todaySettled = progress.lastSettleDate == today
+        val result = DayPhaseLogic.sleepToNextDay(
+            current,
+            progress.clockPaused,
+            now,
+            stage,
+            todaySettled = todaySettled
+        )
         if (result.advanced) gameDayDao.upsert(result.state.toEntity())
         return result
     }

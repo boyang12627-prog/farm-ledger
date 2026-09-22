@@ -59,7 +59,8 @@ object DayPhaseLogic {
         state: GameDayState,
         clockPaused: Boolean,
         nowEpochMs: Long,
-        farmStage: FarmStage = FarmStage.BARREN
+        farmStage: FarmStage = FarmStage.BARREN,
+        todaySettled: Boolean = false
     ): DayPhaseResult {
         if (clockPaused) {
             return DayPhaseResult(
@@ -75,6 +76,14 @@ object DayPhaseLogic {
                 advanced = false,
                 slept = false,
                 messageZh = "只能在夜晚睡覺。現在是「${state.phase.nameZh}」。"
+            )
+        }
+        if (!todaySettled) {
+            return DayPhaseResult(
+                state = state,
+                advanced = false,
+                slept = false,
+                messageZh = "請先完成今日結算"
             )
         }
         val updated = state.copy(

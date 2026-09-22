@@ -44,13 +44,33 @@ class DayPhaseLogicTest {
         assertThat(blocked.advanced).isFalse()
         assertThat(blocked.slept).isFalse()
 
-        val ok = DayPhaseLogic.sleepToNextDay(night, false, 10_000L)
+        val stillBlocked = DayPhaseLogic.sleepToNextDay(night, false, 10_000L, todaySettled = false)
+        assertThat(stillBlocked.advanced).isFalse()
+        assertThat(stillBlocked.slept).isFalse()
+        assertThat(stillBlocked.messageZh).isEqualTo("請先完成今日結算")
+
+        val ok = DayPhaseLogic.sleepToNextDay(night, false, 10_000L, todaySettled = true)
         assertThat(ok.advanced).isTrue()
         assertThat(ok.slept).isTrue()
         assertThat(ok.state.gameDay).isEqualTo(4)
         assertThat(ok.state.phase).isEqualTo(DayPhase.MORNING)
         // 睡覺不發成長點：狀態機不含 growthPoints 欄位
         assertThat(ok.messageZh).contains("不發成長點")
+    }
+
+    @Test
+    fun sleep_blockedAtNight_untilTodaySettled() {
+        val night = base.copy(phase = DayPhase.NIGHT, gameDay = 3)
+        val blocked = DayPhaseLogic.sleepToNextDay(night, false, 11_000L, todaySettled = false)
+        assertThat(blocked.advanced).isFalse()
+        assertThat(blocked.slept).isFalse()
+        assertThat(blocked.state.gameDay).isEqualTo(3)
+        assertThat(blocked.messageZh).isEqualTo("請先完成今日結算")
+
+        val ok = DayPhaseLogic.sleepToNextDay(night, false, 12_000L, todaySettled = true)
+        assertThat(ok.advanced).isTrue()
+        assertThat(ok.slept).isTrue()
+        assertThat(ok.state.gameDay).isEqualTo(4)
     }
 
     @Test

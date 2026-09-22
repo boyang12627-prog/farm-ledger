@@ -67,7 +67,7 @@ class DayLoopLogicTest {
             lastWallClockEpochMs = 1L,
             updatedAtEpochMs = 1L
         )
-        val slept = DayPhaseLogic.sleepToNextDay(night, clockPaused = false, nowEpochMs = 2L)
+        val slept = DayPhaseLogic.sleepToNextDay(night, clockPaused = false, nowEpochMs = 2L, todaySettled = true)
         assertThat(slept.slept).isTrue()
         assertThat(slept.state.phase).isEqualTo(DayPhase.MORNING)
         assertThat(slept.messageZh).contains("不發成長點")
