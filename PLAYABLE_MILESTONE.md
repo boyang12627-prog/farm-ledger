@@ -6,7 +6,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA | （見本次 push 的 `main` HEAD） |
+| Commit SHA | `a04d216e4bf0512fe99a44d2d88f794e4bc9a133`（短：`a04d216`） |
 | 說明 | M1 day-phase：晨／晝／昏／夜＋睡覺過日；Room 存檔；農場根世界 HUD |
 | 分支 | `main` |
 
