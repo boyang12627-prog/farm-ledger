@@ -6,7 +6,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA |（組裝推送後填入） |
+| Commit SHA | `7f91786c252459196840c867e928ec9b7fd409bc`（短：`7f91786`） |
 | 說明 | M4：連續一日生活（起床→勞作→黃昏商店→夜結→瞓覺）＋商店攤位／佈置 |
 | 前身 M3 | `6f0a859`／記錄 `7716944` |
 | 分支 | `main` |
@@ -51,6 +51,6 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## 基準提交記錄
 
-- M4 day-loop + shop pole：（推送後）
+- M4 day-loop + shop stall：`7f91786`（2026-09-22）
 - M3 night-settle + inventory feed：`6f0a859`（2026-09-22）
 - M2 art+inventory：`393f781`（2026-09-22）
