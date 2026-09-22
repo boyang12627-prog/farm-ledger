@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.CropKind
+import com.farmledger.app.domain.model.DayPhase
 import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.GrowthSpendCosts
@@ -97,6 +98,7 @@ fun FarmScreen(
     val progress by vm.progress.collectAsState()
     val pet by vm.pet.collectAsState()
     val decorations by vm.decorations.collectAsState()
+    val gameDay by vm.gameDay.collectAsState()
     val entries by vm.entries.collectAsState()
     val message by vm.message.collectAsState()
     var selectedCrop by remember { mutableStateOf(CropKind.WHEAT) }
@@ -123,7 +125,7 @@ fun FarmScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(12.dp)) {
-        // HUD
+        // HUD：時鐘／時段＋成長點（農場為根，無獨立記帳首頁）
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -137,25 +139,39 @@ fun FarmScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "累計結算 ${progress.totalSettleDays} 日" +
-                        (nextUnlock?.let { " → ${it.second}（${it.first}）" } ?: "（滿階）"),
+                    "第 ${gameDay.gameDay} 日・${gameDay.phase.nameZh}" +
+                        " · 累計結算 ${progress.totalSettleDays}" +
+                        (nextUnlock?.let { " → ${it.second}" } ?: ""),
                     style = MaterialTheme.typography.bodySmall,
                     color = FarmSoil
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
+                    painterResource(R.drawable.ic_clock),
+                    contentDescription = "時段",
+                    modifier = Modifier.size(22.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Text(
+                    " ${gameDay.phase.nameZh}",
+                    color = FarmText,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(Modifier.size(10.dp))
+                Image(
                     painterResource(R.drawable.ic_growth_point),
-                    null,
-                    Modifier.size(22.dp),
+                    contentDescription = "成長點",
+                    modifier = Modifier.size(22.dp),
                     contentScale = ContentScale.FillBounds
                 )
                 Text(" ${progress.growthPoints}", color = FarmText, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.size(10.dp))
                 Image(
                     painterResource(R.drawable.ic_seed),
-                    null,
-                    Modifier.size(22.dp),
+                    contentDescription = "種子",
+                    modifier = Modifier.size(22.dp),
                     contentScale = ContentScale.FillBounds
                 )
                 Text(" ${progress.seeds}", color = FarmText)
@@ -197,8 +213,34 @@ fun FarmScreen(
         }
 
         Spacer(Modifier.height(6.dp))
+        // 日循環：等待推進時段；夜晚睡覺過日（不發成長點）
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = { vm.waitNextPhase() },
+                enabled = !progress.clockPaused && gameDay.phase != DayPhase.NIGHT,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    when (gameDay.phase) {
+                        DayPhase.NIGHT -> "夜晚・請睡覺"
+                        else -> "等待・下一時段"
+                    }
+                )
+            }
+            Button(
+                onClick = { vm.sleepToNextDay() },
+                enabled = !progress.clockPaused && gameDay.phase == DayPhase.NIGHT,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (gameDay.phase == DayPhase.NIGHT) FarmSelected else FarmBg,
+                    contentColor = FarmText
+                )
+            ) { Text("睡覺・下一日") }
+        }
+
+        Spacer(Modifier.height(6.dp))
         Text(
-            "成長點只由每日結算獲得；在場景內花點種植／餵食／佈置。",
+            "成長點只由每日結算獲得；睡覺／等待不發獎。編輯帳目唔會再發獎。",
             style = MaterialTheme.typography.bodySmall,
             color = FarmSoil
         )
@@ -248,6 +290,8 @@ fun FarmScreen(
                     interactive = caps.animalSlots > 0,
                     capabilities = caps,
                     placedDecorIds = decorations.filter { it.placed }.map { it.id }.toSet(),
+                    dayPhase = gameDay.phase,
+                    growthPoints = progress.growthPoints,
                     onPetTap = {
                         if (caps.petFeedSlots > 0) vm.feedPet()
                     }

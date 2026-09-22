@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.farmledger.app.data.local.entity.DailySettlementEntity
+import com.farmledger.app.data.local.entity.GameDayStateEntity
+import com.farmledger.app.data.local.entity.InventoryItemEntity
 import com.farmledger.app.data.local.entity.LedgerEntryEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -55,4 +57,34 @@ interface SettlementDao {
 
     @Query("SELECT COUNT(*) FROM daily_settlements")
     suspend fun countAll(): Int
+}
+
+@Dao
+interface GameDayDao {
+    @Query("SELECT * FROM game_day_state WHERE id = 1 LIMIT 1")
+    fun observe(): Flow<GameDayStateEntity?>
+
+    @Query("SELECT * FROM game_day_state WHERE id = 1 LIMIT 1")
+    suspend fun get(): GameDayStateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: GameDayStateEntity)
+}
+
+@Dao
+interface InventoryDao {
+    @Query("SELECT * FROM inventory_items ORDER BY id")
+    fun observeAll(): Flow<List<InventoryItemEntity>>
+
+    @Query("SELECT * FROM inventory_items ORDER BY id")
+    suspend fun getAll(): List<InventoryItemEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: InventoryItemEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(items: List<InventoryItemEntity>)
+
+    @Query("DELETE FROM inventory_items")
+    suspend fun clear()
 }

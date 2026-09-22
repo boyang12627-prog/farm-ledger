@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.farmledger.app.data.repository.FarmLedgerRepository
 import com.farmledger.app.domain.model.CropKind
+import com.farmledger.app.domain.model.GameDayState
+import com.farmledger.app.domain.model.InventoryItem
 import com.farmledger.app.domain.model.Decoration
 import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.LedgerEntry
@@ -12,6 +14,7 @@ import com.farmledger.app.domain.model.PetState
 import com.farmledger.app.domain.model.PlayerProgress
 import com.farmledger.app.domain.model.Plot
 import com.farmledger.app.domain.usecase.FarmLogic
+import com.farmledger.app.domain.usecase.DayPhaseResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +37,13 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     val decorations: StateFlow<List<Decoration>> = repo.decorationsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val gameDay: StateFlow<GameDayState> = repo.gameDayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GameDayState())
+
+    /** M2 stub */
+    val inventory: StateFlow<List<InventoryItem>> = repo.inventoryFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _entries = MutableStateFlow<List<LedgerEntry>>(emptyList())
     val entries: StateFlow<List<LedgerEntry>> = _entries.asStateFlow()
 
@@ -45,6 +55,7 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            repo.ensureInventoryStubs()
             _selectedDate.collect { date ->
                 repo.observeEntries(date).collect { _entries.value = it }
             }
@@ -104,6 +115,16 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     suspend fun exportCsv(): String = repo.exportCsv()
     fun importJson(text: String) = viewModelScope.launch { _message.value = repo.importJson(text) }
     fun importCsv(text: String) = viewModelScope.launch { _message.value = repo.importCsv(text) }
+
+    fun waitNextPhase() = viewModelScope.launch {
+        val r: DayPhaseResult = repo.waitNextPhase()
+        _message.value = r.messageZh
+    }
+
+    fun sleepToNextDay() = viewModelScope.launch {
+        val r: DayPhaseResult = repo.sleepToNextDay()
+        _message.value = r.messageZh
+    }
 
     fun consumeMessage() { _message.value = null }
 

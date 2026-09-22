@@ -2,14 +2,20 @@ package com.farmledger.app.ui.screens.farm
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,18 +24,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.farmledger.app.R
+import com.farmledger.app.domain.model.DayPhase
+import com.farmledger.app.domain.usecase.DayPhaseLogic
 import com.farmledger.app.domain.usecase.FarmStageCapabilities
 import com.farmledger.app.domain.usecase.FarmStageLogic
+import com.farmledger.app.ui.theme.FarmText
 import kotlinx.coroutines.delay
 
 /** Logical scene size matching docs/farm_scene_preview.png (5×3 of 32px tiles). */
@@ -39,7 +53,8 @@ private const val Tile = 32f
 private const val HappyMs = 1_400L
 
 /**
- * 單一農場場景層：依階段能力顯示荒地／草地邊緣／柵欄／小屋／寵物。
+ * 單一農場場景層：依階段能力顯示荒地／草地邊緣／柵欄／小屋／寵物；
+ * M1 另接時段 Color tint（或 overlay_* drawable）＋角落 HUD（時鐘／成長點）。
  * 純 UI — 不改動結算發獎規則。
  */
 @Composable
@@ -48,6 +63,9 @@ fun FarmSceneLayer(
     interactive: Boolean = true,
     capabilities: FarmStageCapabilities = FarmStageLogic.capabilities(0),
     placedDecorIds: Set<String> = emptySet(),
+    dayPhase: DayPhase = DayPhase.MORNING,
+    growthPoints: Int? = null,
+    useOverlayDrawable: Boolean = false,
     onPetTap: () -> Unit = {},
 ) {
     var happyUntilMs by remember { mutableLongStateOf(0L) }
@@ -95,11 +113,22 @@ fun FarmSceneLayer(
         else -> grassBarren
     }
 
+    val phaseTint = Color(DayPhaseLogic.phaseTintArgb(dayPhase))
+    val overlayRes = when (dayPhase) {
+        DayPhase.MORNING -> R.drawable.overlay_dawn
+        DayPhase.NOON -> R.drawable.overlay_day
+        DayPhase.EVENING -> R.drawable.overlay_dusk
+        DayPhase.NIGHT -> R.drawable.overlay_night
+    }
+
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
             .aspectRatio(SceneW / SceneH)
-            .semantics { contentDescription = "農田場景・${capabilities.stage.nameZh}" }
+            .semantics {
+                contentDescription =
+                    "農田場景・${capabilities.stage.nameZh}・${dayPhase.nameZh}"
+            }
     ) {
         val petSize = maxWidth * (Tile / SceneW)
 
@@ -121,7 +150,6 @@ fun FarmSceneLayer(
                     }
                 }
                 if (capabilities.greenerDenser) {
-                    // denser bushes feel
                     decor(bush, 4f, 4f, 20f, 16f)
                     decor(bush, 100f, 8f, 22f, 18f)
                 }
@@ -173,10 +201,8 @@ fun FarmSceneLayer(
             if (capabilities.showHut) {
                 decor(hut, 2f, 48f, 48f, 48f)
             } else if (!capabilities.showGrassEdges) {
-                // 荒地殘破屋 stub（純視覺，無獎勵）
                 decor(hutRuin, 2f, 48f, 48f, 48f)
             }
-            // Placed decor hint (scarecrow etc. as bush stand-in if placed)
             if (placedDecorIds.isNotEmpty() && capabilities.decorSlots > 0) {
                 decor(bush, 70f, 68f, 24f, 20f)
             }
@@ -231,6 +257,60 @@ fun FarmSceneLayer(
                 contentScale = ContentScale.FillBounds,
                 filterQuality = FilterQuality.None
             )
+        }
+
+        // Phase tint — default Compose Color; optional stretchable overlay_* PNG
+        if (useOverlayDrawable) {
+            Image(
+                painter = painterResource(overlayRes),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+                filterQuality = FilterQuality.None
+            )
+        } else if (phaseTint.alpha > 0.001f) {
+            Box(Modifier.fillMaxSize().background(phaseTint))
+        }
+
+        // Mini HUD (clock + optional growth) — stays above tint for readability
+        Row(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(6.dp)
+                .background(Color(0xCCFFF8E7), RoundedCornerShape(8.dp))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_clock),
+                contentDescription = "時段",
+                modifier = Modifier.size(18.dp),
+                contentScale = ContentScale.FillBounds,
+                filterQuality = FilterQuality.None
+            )
+            Text(
+                " ${dayPhase.nameZh}",
+                color = FarmText,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (growthPoints != null) {
+                Image(
+                    painter = painterResource(R.drawable.ic_growth_point),
+                    contentDescription = "成長點",
+                    modifier = Modifier
+                        .padding(start = 6.dp)
+                        .size(16.dp),
+                    contentScale = ContentScale.FillBounds,
+                    filterQuality = FilterQuality.None
+                )
+                Text(
+                    " $growthPoints",
+                    color = FarmText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

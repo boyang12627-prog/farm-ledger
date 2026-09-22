@@ -162,6 +162,22 @@
 
 ---
 
+## 7b. M1 實際素材（2026-09-22 開工）
+
+產品 M1＝日狀態機＋離線存檔＋空農場可過日。美術最低包已落檔，詳見 **`docs/m1_art_assets.md`**。
+
+| 類 | 實際檔名 |
+|----|----------|
+| 地形 | `tile_grass`／`tile_dirt`／`tile_path`／`tile_dirt_edge`＋`_n/_s/_e/_w`／`tile_grass_barren` |
+| 圍欄 | `fence_h`／`fence_v`／`fence_corner_{nw,ne,sw,se}` |
+| HUD | `ic_clock`（新）、`ic_growth_point`（刷新） |
+| 時段 | **Compose tint**（`DayPhaseLogic.phaseTintArgb`）；可選 `overlay_{dawn,day,dusk,night}.png` |
+| 接線 | `FarmSceneLayer(dayPhase, growthPoints)`；預設 Color tint |
+
+產生腳本：`scripts/gen_m1_art_assets.py`。
+
+---
+
 ## 8. 群組 5 行重點（可直接貼）
 
 1. **方向**：俯視暖色像素＋大方塊深輪廓；單一農場；晨昏夜用 tint。  

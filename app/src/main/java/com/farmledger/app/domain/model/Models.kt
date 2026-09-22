@@ -118,3 +118,48 @@ object GrowthSpendCosts {
     const val FEED_PET = 1
     const val BUILD_DECOR = 1
 }
+
+/** 日內時段（牧場物語式日循環） */
+enum class DayPhase(val nameZh: String) {
+    MORNING("晨"),
+    NOON("晝"),
+    EVENING("昏"),
+    NIGHT("夜");
+
+    fun nextOrNull(): DayPhase? = when (this) {
+        MORNING -> NOON
+        NOON -> EVENING
+        EVENING -> NIGHT
+        NIGHT -> null
+    }
+
+    companion object {
+        fun fromName(name: String): DayPhase =
+            entries.find { it.name == name } ?: MORNING
+    }
+}
+
+/**
+ * 遊戲日／時段狀態（離線 Room 持久化）。
+ * 與結算發獎正交：睡覺只推進日與時段，不發成長點。
+ */
+@Serializable
+data class GameDayState(
+    val gameDay: Int = 1,
+    val phase: DayPhase = DayPhase.MORNING,
+    /** 快取農場階段名（由累計結算日推導，存檔方便 HUD／場景） */
+    val farmStageHint: String = FarmStage.BARREN.name,
+    val lastWallClockEpochMs: Long = 0L,
+    val updatedAtEpochMs: Long = 0L
+)
+
+/** M2 預留：背包物品種類 stub（尚未接商店／收成入庫） */
+enum class InventoryItemKind { SEED_BAG, CROP_WHEAT, CROP_CARROT, CROP_TOMATO, MATERIAL }
+
+@Serializable
+data class InventoryItem(
+    val id: String,
+    val kind: InventoryItemKind,
+    val quantity: Int = 0,
+    val updatedAtEpochMs: Long = 0L
+)

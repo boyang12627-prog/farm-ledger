@@ -1,21 +1,33 @@
 package com.farmledger.app.data.repository
 
+import com.farmledger.app.data.local.dao.GameDayDao
+import com.farmledger.app.data.local.dao.InventoryDao
 import com.farmledger.app.data.local.dao.LedgerDao
 import com.farmledger.app.data.local.dao.SettlementDao
 import com.farmledger.app.data.local.datastore.GamePreferences
 import com.farmledger.app.data.local.entity.DailySettlementEntity
+import com.farmledger.app.data.local.entity.GameDayStateEntity
+import com.farmledger.app.data.local.entity.InventoryItemEntity
 import com.farmledger.app.data.local.entity.LedgerEntryEntity
 import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.DailySettlement
+import com.farmledger.app.domain.model.DayPhase
 import com.farmledger.app.domain.model.Decoration
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.EntryType
+import com.farmledger.app.domain.model.FarmStage
+import com.farmledger.app.domain.model.GameDayState
+import com.farmledger.app.domain.model.InventoryItem
+import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.LedgerEntry
 import com.farmledger.app.domain.model.PetState
 import com.farmledger.app.domain.model.PlayerProgress
 import com.farmledger.app.domain.model.Plot
 import com.farmledger.app.domain.usecase.DailySettlementLogic
+import com.farmledger.app.domain.usecase.DayPhaseLogic
+import com.farmledger.app.domain.usecase.DayPhaseResult
 import com.farmledger.app.domain.usecase.FarmLogic
+import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.usecase.SettlementResult
 import com.farmledger.app.domain.usecase.WeeklyReviewLogic
 import com.farmledger.app.domain.usecase.WeeklyReviewResult
@@ -33,6 +45,8 @@ import java.util.UUID
 class FarmLedgerRepository(
     private val ledgerDao: LedgerDao,
     private val settlementDao: SettlementDao,
+    private val gameDayDao: GameDayDao,
+    private val inventoryDao: InventoryDao,
     private val prefs: GamePreferences
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = true }
@@ -42,13 +56,82 @@ class FarmLedgerRepository(
     val petFlow: Flow<PetState> = prefs.petFlow
     val decorationsFlow: Flow<List<Decoration>> = prefs.decorationsFlow
 
+    val gameDayFlow: Flow<GameDayState> = gameDayDao.observe().map { entity ->
+        entity?.toDomain() ?: GameDayState()
+    }
+
+    /** M2 stub：背包觀察（空表為預設） */
+    val inventoryFlow: Flow<List<InventoryItem>> = inventoryDao.observeAll().map { list ->
+        list.map { it.toDomain() }
+    }
+
     fun observeEntries(date: String): Flow<List<LedgerEntry>> =
         ledgerDao.observeByDate(date).map { list -> list.map { it.toDomain() } }
 
     suspend fun syncClock(today: String = LocalDate.now().toString()) {
         val p = prefs.progressFlow.first()
-        val updated = DailySettlementLogic.detectClockRegression(p, today)
+        var updated = DailySettlementLogic.detectClockRegression(p, today)
+        val now = System.currentTimeMillis()
+        val day = ensureGameDay(now)
+        val stage = FarmStageLogic.stageFor(updated.totalSettleDays)
+        if (DayPhaseLogic.isWallClockRegression(day, now)) {
+            updated = updated.copy(clockPaused = true)
+        } else if (!updated.clockPaused) {
+            val touched = DayPhaseLogic.touchWallClock(day, now, stage)
+            if (touched != day) gameDayDao.upsert(touched.toEntity())
+        }
         if (updated != p) prefs.saveProgress(updated)
+    }
+
+    private suspend fun ensureGameDay(nowEpochMs: Long = System.currentTimeMillis()): GameDayState {
+        val existing = gameDayDao.get()?.toDomain()
+        if (existing != null) return existing
+        val fresh = GameDayState(
+            gameDay = 1,
+            phase = DayPhase.MORNING,
+            farmStageHint = FarmStage.BARREN.name,
+            lastWallClockEpochMs = nowEpochMs,
+            updatedAtEpochMs = nowEpochMs
+        )
+        gameDayDao.upsert(fresh.toEntity())
+        return fresh
+    }
+
+    suspend fun waitNextPhase(): DayPhaseResult {
+        syncClock()
+        val progress = prefs.progressFlow.first()
+        val stage = FarmStageLogic.stageFor(progress.totalSettleDays)
+        val now = System.currentTimeMillis()
+        val current = ensureGameDay(now)
+        val result = DayPhaseLogic.waitNextPhase(current, progress.clockPaused, now, stage)
+        if (result.advanced) gameDayDao.upsert(result.state.toEntity())
+        return result
+    }
+
+    suspend fun sleepToNextDay(): DayPhaseResult {
+        syncClock()
+        val progress = prefs.progressFlow.first()
+        val stage = FarmStageLogic.stageFor(progress.totalSettleDays)
+        val now = System.currentTimeMillis()
+        val current = ensureGameDay(now)
+        val result = DayPhaseLogic.sleepToNextDay(current, progress.clockPaused, now, stage)
+        if (result.advanced) gameDayDao.upsert(result.state.toEntity())
+        return result
+    }
+
+    /** M2 stub：確保預設背包列存在（數量 0，不影響成長點） */
+    suspend fun ensureInventoryStubs() {
+        if (inventoryDao.getAll().isNotEmpty()) return
+        val now = System.currentTimeMillis()
+        val stubs = InventoryItemKind.entries.map { kind ->
+            InventoryItemEntity(
+                id = kind.name.lowercase(),
+                kind = kind.name,
+                quantity = 0,
+                updatedAtEpochMs = now
+            )
+        }
+        inventoryDao.upsertAll(stubs)
     }
 
     suspend fun clearClockPause() {
@@ -262,7 +345,9 @@ class FarmLedgerRepository(
             progress = prefs.progressFlow.first(),
             plots = prefs.plotsFlow.first(),
             pet = prefs.petFlow.first(),
-            decorations = prefs.decorationsFlow.first()
+            decorations = prefs.decorationsFlow.first(),
+            gameDay = ensureGameDay(),
+            inventory = inventoryDao.getAll().map { it.toDomain() }
         )
         return json.encodeToString(dump)
     }
@@ -291,6 +376,11 @@ class FarmLedgerRepository(
             prefs.savePlots(dump.plots.ifEmpty { FarmLogic.defaultPlots() })
             prefs.savePet(dump.pet)
             prefs.saveDecorations(dump.decorations.ifEmpty { GamePreferences.defaultDecorations() })
+            gameDayDao.upsert(dump.gameDay.toEntity())
+            if (dump.inventory.isNotEmpty()) {
+                inventoryDao.clear()
+                inventoryDao.upsertAll(dump.inventory.map { it.toEntity() })
+            }
             "匯入成功：${dump.entries.size} 筆帳目。"
         } catch (e: Exception) {
             "匯入失敗：${e.message}"
@@ -354,7 +444,9 @@ data class ExportBundle(
     val progress: PlayerProgress = PlayerProgress(),
     val plots: List<Plot> = emptyList(),
     val pet: PetState = PetState(),
-    val decorations: List<Decoration> = emptyList()
+    val decorations: List<Decoration> = emptyList(),
+    val gameDay: GameDayState = GameDayState(),
+    val inventory: List<InventoryItem> = emptyList()
 )
 
 private fun LedgerEntryEntity.toDomain() = LedgerEntry(
@@ -368,3 +460,35 @@ private fun LedgerEntry.toEntity() = LedgerEntryEntity(
 
 private fun DailySettlementEntity.toDomain() = DailySettlement(localDate, growthPointsAwarded, settledAtEpochMs)
 private fun DailySettlement.toEntity() = DailySettlementEntity(localDate, growthPointsAwarded, settledAtEpochMs)
+
+
+private fun GameDayStateEntity.toDomain() = GameDayState(
+    gameDay = gameDay,
+    phase = DayPhase.fromName(phase),
+    farmStageHint = farmStageHint,
+    lastWallClockEpochMs = lastWallClockEpochMs,
+    updatedAtEpochMs = updatedAtEpochMs
+)
+
+private fun GameDayState.toEntity() = GameDayStateEntity(
+    id = 1,
+    gameDay = gameDay,
+    phase = phase.name,
+    farmStageHint = farmStageHint,
+    lastWallClockEpochMs = lastWallClockEpochMs,
+    updatedAtEpochMs = updatedAtEpochMs
+)
+
+private fun InventoryItemEntity.toDomain() = InventoryItem(
+    id = id,
+    kind = runCatching { InventoryItemKind.valueOf(kind) }.getOrDefault(InventoryItemKind.MATERIAL),
+    quantity = quantity,
+    updatedAtEpochMs = updatedAtEpochMs
+)
+
+private fun InventoryItem.toEntity() = InventoryItemEntity(
+    id = id,
+    kind = kind.name,
+    quantity = quantity,
+    updatedAtEpochMs = updatedAtEpochMs
+)

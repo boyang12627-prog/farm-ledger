@@ -11,6 +11,8 @@ class AppContainer(context: Context) {
     val repository = FarmLedgerRepository(
         ledgerDao = db.ledgerDao(),
         settlementDao = db.settlementDao(),
+        gameDayDao = db.gameDayDao(),
+        inventoryDao = db.inventoryDao(),
         prefs = prefs
     )
 }
