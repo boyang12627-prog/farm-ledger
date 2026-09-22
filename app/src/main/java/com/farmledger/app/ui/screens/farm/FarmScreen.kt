@@ -1,6 +1,13 @@
 package com.farmledger.app.ui.screens.farm
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.alpha
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +65,7 @@ import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.DayPhase
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.GrowthSpendCosts
+import com.farmledger.app.domain.model.InventoryFeedCosts
 import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.PlotState
 import com.farmledger.app.domain.model.RewardRules
@@ -105,6 +114,7 @@ fun FarmScreen(
     val inventory by vm.inventory.collectAsState()
     val entries by vm.entries.collectAsState()
     val message by vm.message.collectAsState()
+    val petFeedbackUntilMs by vm.petFeedbackUntilMs.collectAsState()
     var selectedCrop by remember { mutableStateOf(CropKind.WHEAT) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var overlay by remember { mutableStateOf(FarmOverlay.None) }
@@ -278,7 +288,7 @@ fun FarmScreen(
 
         Spacer(Modifier.height(6.dp))
         Text(
-            "種／澆／收用背包；買種子＝支出、賣收成＝收入（唔發成長點）。結算一日一點。",
+            "種／澆／收用背包；買種子／飼料＝支出、賣收成＝收入（唔發成長點）。夜結算一日一點。",
             style = MaterialTheme.typography.bodySmall,
             color = FarmSoil
         )
@@ -370,6 +380,7 @@ fun FarmScreen(
                     placedDecorIds = decorations.filter { it.placed }.map { it.id }.toSet(),
                     dayPhase = gameDay.phase,
                     growthPoints = progress.growthPoints,
+                    petFeedbackUntilMs = petFeedbackUntilMs,
                     onPetTap = {
                         if (caps.petFeedSlots > 0) vm.feedPet()
                     }
@@ -459,6 +470,13 @@ fun FarmScreen(
                                         )
                                     ) {
                                         Image(
+                                            painterResource(R.drawable.fx_sparkle_ready),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            contentScale = ContentScale.FillBounds
+                                        )
+                                        Spacer(Modifier.size(4.dp))
+                                        Image(
                                             painterResource(
                                                 plot.crop?.let { cropHarvestItemRes(it) }
                                                     ?: R.drawable.btn_harvest
@@ -507,14 +525,24 @@ fun FarmScreen(
 
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val feedHave = InventoryLogic.feedQty(inventory)
             OutlinedButton(
                 onClick = { vm.feedPet() },
-                enabled = caps.petFeedSlots > 0,
+                enabled = caps.petFeedSlots > 0 && feedHave >= InventoryFeedCosts.FEED_PER_MEAL,
                 modifier = Modifier.weight(1f)
             ) {
+                Image(
+                    painterResource(R.drawable.item_feed),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(4.dp))
                 Text(
-                    if (caps.petFeedSlots > 0) "餵食 -${GrowthSpendCosts.FEED_PET}"
-                    else "餵食（萌芽解鎖）"
+                    when {
+                        caps.petFeedSlots <= 0 -> "餵食（萌芽解鎖）"
+                        else -> "餵食 -${InventoryFeedCosts.FEED_PER_MEAL}（有$feedHave）"
+                    }
                 )
             }
             OutlinedButton(
@@ -582,6 +610,7 @@ fun FarmScreen(
             SettleOverlayContent(
                 vm = vm,
                 hasActivity = entries.any { it.status == EntryStatus.ACTIVE },
+                phase = gameDay.phase,
                 onClose = { overlay = FarmOverlay.None }
             )
         }
@@ -630,7 +659,7 @@ private fun ShopOverlayContent(
             )
         }
         Text(
-            "買種子＝支出、賣收成＝收入；金額唔發成長點。必須經背包。",
+            "買種子／飼料＝支出、賣收成＝收入；金額唔發成長點。必須經背包。",
             style = MaterialTheme.typography.bodySmall,
             color = FarmSoil
         )
@@ -667,6 +696,50 @@ private fun ShopOverlayContent(
                     )
                 }
                 Button(onClick = { vm.buySeeds(crop, 1) }) {
+                    Image(
+                        painterResource(R.drawable.ic_buy_bag),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Text("買 1")
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painterResource(R.drawable.item_feed),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                contentScale = ContentScale.FillBounds
+            )
+            Spacer(Modifier.size(6.dp))
+            Text("買飼料", fontWeight = FontWeight.Bold, color = FarmText)
+        }
+        run {
+            val price = ShopCatalog.FEED_BUY_PRICE_MINOR
+            val have = InventoryLogic.feedQty(inventory)
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painterResource(R.drawable.item_feed),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        "飼料 · ${(price / 100.0)}／袋 · 有 $have",
+                        color = FarmText
+                    )
+                }
+                Button(onClick = { vm.buyFeed(1) }) {
                     Image(
                         painterResource(R.drawable.ic_buy_bag),
                         contentDescription = null,
@@ -817,41 +890,141 @@ private fun LedgerOverlayContent(
 private fun SettleOverlayContent(
     vm: AppViewModel,
     hasActivity: Boolean,
+    phase: DayPhase,
     onClose: () -> Unit
 ) {
     val progress by vm.progress.collectAsState()
     val message by vm.message.collectAsState()
+    val ceremony by vm.settleCeremonyAwarded.collectAsState()
     val today = LocalDate.now().toString()
+    val already = progress.lastSettleDate == today
+    val moonAlpha by animateFloatAsState(
+        targetValue = if (ceremony || already) 1f else if (phase == DayPhase.NIGHT) 0.85f else 0.55f,
+        animationSpec = tween(900),
+        label = "moon"
+    )
+    var moonFrame by remember { mutableIntStateOf(0) }
+    LaunchedEffect(ceremony, phase) {
+        if (ceremony || phase == DayPhase.NIGHT) {
+            for (i in 0..2) {
+                moonFrame = i
+                delay(280)
+            }
+            moonFrame = 2
+        } else {
+            moonFrame = 0
+        }
+    }
+    val moonRes = when (moonFrame) {
+        1 -> R.drawable.moon_rise_f1
+        2 -> R.drawable.moon_rise_f2
+        else -> R.drawable.moon_rise_f0
+    }
     Column(
         Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("每日結算", style = MaterialTheme.typography.headlineSmall, color = FarmText)
+        Text("夜結儀式", style = MaterialTheme.typography.headlineSmall, color = FarmText)
         Spacer(Modifier.height(8.dp))
         Card(
             Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            colors = CardDefaults.cardColors(
+                containerColor = if (phase == DayPhase.NIGHT) Color(0xFF2A3A68) else MaterialTheme.colorScheme.primaryContainer
+            )
         ) {
-            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painterResource(moonRes),
+                    contentDescription = "日結月亮升起",
+                    modifier = Modifier.size(72.dp).alpha(moonAlpha),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.height(8.dp))
                 Text(
                     "固定 +${RewardRules.DAILY_GROWTH_POINTS} 成長點",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = FarmGrowth
+                    color = if (phase == DayPhase.NIGHT) Color(0xFFF4D078) else FarmGrowth
                 )
-                Text("與筆數／金額無關 · 每日一次", color = FarmText)
-                Text("買賣唔發獎。編輯唔會再發獎。", style = MaterialTheme.typography.bodySmall, color = FarmText)
+                Text(
+                    "與筆數／金額無關 · 每日一次 · 編輯唔會再發獎",
+                    color = if (phase == DayPhase.NIGHT) Color(0xFFEDE6D9) else FarmText,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "買賣／睡覺唔發獎。時鐘倒退暫停獎勵。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (phase == DayPhase.NIGHT) Color(0xFFC8BCA8) else FarmSoil
+                )
             }
         }
         Spacer(Modifier.height(12.dp))
         Text("今日帳本活動：${if (hasActivity) "是" else "否"}", fontWeight = FontWeight.SemiBold, color = FarmText)
-        Text("今日已結算：${if (progress.lastSettleDate == today) "是" else "否"}", color = FarmText)
+        Text("今日已結算：${if (already) "是" else "否"}", color = FarmText)
         Text("累計結算日：${progress.totalSettleDays}", color = FarmText)
+        if (phase != DayPhase.NIGHT) {
+            Text("提示：夜晚做結算儀式最有氣氛（規則全日相同）。", style = MaterialTheme.typography.bodySmall, color = FarmSoil)
+        }
         Spacer(Modifier.height(12.dp))
-        Button(onClick = { vm.settleToday() }, modifier = Modifier.fillMaxWidth()) {
-            Text("執行結算")
+        Button(
+            onClick = { vm.settleToday() },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !progress.clockPaused
+        ) {
+            Image(
+                painterResource(R.drawable.ic_moon_settle),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                contentScale = ContentScale.FillBounds
+            )
+            Spacer(Modifier.size(6.dp))
+            Text(if (already) "今日已結清（唔會再發獎）" else "升起月亮・執行結算")
+        }
+        AnimatedVisibility(
+            visible = ceremony,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut()
+        ) {
+            Column(
+                Modifier.padding(top = 12.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painterResource(R.drawable.settle_banner),
+                    contentDescription = "今日結清",
+                    modifier = Modifier.size(width = 160.dp, height = 48.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.height(8.dp))
+                Image(
+                    painterResource(R.drawable.ic_settle_stamp),
+                    contentDescription = "結清印章",
+                    modifier = Modifier.size(56.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painterResource(R.drawable.ic_growth_point),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        "＋${RewardRules.DAILY_GROWTH_POINTS} 成長點入袋",
+                        fontWeight = FontWeight.Bold,
+                        color = FarmGrowth
+                    )
+                }
+                TextButton(onClick = { vm.consumeSettleCeremony() }) { Text("收下") }
+            }
         }
         message?.let {
             Spacer(Modifier.height(8.dp))
@@ -882,6 +1055,7 @@ private fun inventoryIconRes(kind: InventoryItemKind) = when (kind) {
     InventoryItemKind.CROP_WHEAT -> R.drawable.item_harvest_wheat
     InventoryItemKind.CROP_CARROT -> R.drawable.item_harvest_carrot
     InventoryItemKind.CROP_TOMATO -> R.drawable.item_harvest_tomato
+    InventoryItemKind.FEED -> R.drawable.item_feed
     InventoryItemKind.MATERIAL -> R.drawable.item_material
 }
 

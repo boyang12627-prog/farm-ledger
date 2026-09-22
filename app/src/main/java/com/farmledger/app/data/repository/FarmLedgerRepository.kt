@@ -138,6 +138,11 @@ class FarmLedgerRepository(
             // 新玩家起步種子
             inv = InventoryLogic.add(inv, InventoryItemKind.SEED_WHEAT, 3, now).inventory
         }
+        // M3：首次建立背包時贈 2 袋飼料（唔發成長點）；已有 FEED 列則不重贈
+        val hadFeedRow = existing.any { it.kind == InventoryItemKind.FEED }
+        if (!hadFeedRow && InventoryLogic.feedQty(inv) == 0) {
+            inv = InventoryLogic.add(inv, InventoryItemKind.FEED, 2, now).inventory
+        }
         inventoryDao.upsertAll(inv.map { it.toEntity() })
     }
 
@@ -363,6 +368,18 @@ class FarmLedgerRepository(
         return trade.msg
     }
 
+    suspend fun buyFeed(quantity: Int = 1): String {
+        ensureInventoryStubs()
+        syncClock()
+        val now = System.currentTimeMillis()
+        val trade = InventoryLogic.buyFeed(loadInventory(now), quantity, now)
+        if (!trade.ok || trade.entryType == null) return trade.msg
+        saveInventory(trade.inventory)
+        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        return trade.msg
+    }
+
+
     suspend fun refreshFarm() {
         val progress = prefs.progressFlow.first()
         val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), System.currentTimeMillis(), progress.clockPaused)
@@ -370,13 +387,16 @@ class FarmLedgerRepository(
     }
 
     suspend fun feedPet(): String {
+        ensureInventoryStubs()
         syncClock()
         val progress = prefs.progressFlow.first()
         val pet = prefs.petFlow.first()
-        val r = FarmLogic.feedPet(pet, progress, System.currentTimeMillis())
+        val now = System.currentTimeMillis()
+        val r = FarmLogic.feedPet(pet, progress, loadInventory(now), now)
         if (r.ok) {
-            prefs.saveProgress(r.progress)
+            // 成長點不變；只存寵物＋背包
             r.pet?.let { prefs.savePet(it) }
+            saveInventory(r.inventory)
         }
         return r.msg
     }

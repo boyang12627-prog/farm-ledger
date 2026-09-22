@@ -66,11 +66,21 @@ fun FarmSceneLayer(
     dayPhase: DayPhase = DayPhase.MORNING,
     growthPoints: Int? = null,
     useOverlayDrawable: Boolean = false,
+    /** 外部餵食／互動成功時傳入截止 epoch，觸發開心／進食姿 */
+    petFeedbackUntilMs: Long = 0L,
     onPetTap: () -> Unit = {},
 ) {
     var happyUntilMs by remember { mutableLongStateOf(0L) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(petFeedbackUntilMs) {
+        if (petFeedbackUntilMs > happyUntilMs) {
+            happyUntilMs = petFeedbackUntilMs
+        }
+    }
+
     val isHappy = nowMs < happyUntilMs
+    val isEating = isHappy && petFeedbackUntilMs >= happyUntilMs && (happyUntilMs - nowMs) > 200L
 
     LaunchedEffect(happyUntilMs) {
         if (happyUntilMs <= 0L) return@LaunchedEffect
@@ -104,7 +114,9 @@ fun FarmSceneLayer(
     val bush = ImageBitmap.imageResource(R.drawable.bush)
     val petIdle = ImageBitmap.imageResource(R.drawable.pet_idle)
     val petHappy = ImageBitmap.imageResource(R.drawable.pet_happy)
+    val petEat = ImageBitmap.imageResource(R.drawable.pet_eat)
     val heart = ImageBitmap.imageResource(R.drawable.fx_heart)
+    val eatFx = ImageBitmap.imageResource(R.drawable.fx_eat)
 
     val stageGrass = when {
         capabilities.greenerDenser -> grassThrive
@@ -227,16 +239,20 @@ fun FarmSceneLayer(
                     } else Modifier
                 )
             Image(
-                bitmap = if (isHappy) petHappy else petIdle,
-                contentDescription = "小芽",
+                bitmap = when {
+                    isHappy && isEating -> petEat
+                    isHappy -> petHappy
+                    else -> petIdle
+                },
+                contentDescription = if (isEating) "小芽進食" else "小芽",
                 modifier = petMod,
                 contentScale = ContentScale.FillBounds,
                 filterQuality = FilterQuality.None
             )
             if (isHappy) {
                 Image(
-                    bitmap = heart,
-                    contentDescription = "心心",
+                    bitmap = if (isEating) eatFx else heart,
+                    contentDescription = if (isEating) "進食" else "心心",
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .offset(x = maxWidth * (92f / SceneW), y = maxHeight * (50f / SceneH))

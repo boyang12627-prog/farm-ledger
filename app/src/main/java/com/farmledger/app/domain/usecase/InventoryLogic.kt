@@ -47,6 +47,9 @@ object InventoryLogic {
     fun cropQty(inventory: List<InventoryItem>, crop: CropKind): Int =
         qty(inventory, InventoryItemKind.cropOf(crop))
 
+    fun feedQty(inventory: List<InventoryItem>): Int =
+        qty(inventory, InventoryItemKind.FEED)
+
     fun totalSeeds(inventory: List<InventoryItem>): Int =
         CropKind.entries.sumOf { seedQty(inventory, it) }
 
@@ -161,6 +164,34 @@ object InventoryLogic {
             note = note,
             ok = true,
             msg = "已售出$note（收入 ${(total / 100.0)}；唔發成長點）"
+        )
+    }
+
+    /**
+     * 買飼料：入庫 FEED；寫支出帳（金額不發成長點）。
+     */
+    fun buyFeed(
+        inventory: List<InventoryItem>,
+        quantity: Int,
+        nowEpochMs: Long
+    ): TradeResult {
+        if (quantity <= 0) {
+            return TradeResult(inventory, null, 0, "", false, "購買數量須為正。")
+        }
+        val unit = ShopCatalog.FEED_BUY_PRICE_MINOR
+        val total = unit * quantity
+        val added = add(inventory, InventoryItemKind.FEED, quantity, nowEpochMs)
+        if (!added.ok) {
+            return TradeResult(inventory, null, 0, "", false, added.msg)
+        }
+        val note = "買飼料 ×$quantity"
+        return TradeResult(
+            inventory = added.inventory,
+            entryType = EntryType.EXPENSE,
+            amountMinor = total,
+            note = note,
+            ok = true,
+            msg = "已買入$note（支出 ${(total / 100.0)}；唔發成長點）"
         )
     }
 

@@ -2,7 +2,9 @@ package com.farmledger.app.domain.usecase
 
 import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.CropTimers
+import com.farmledger.app.domain.model.InventoryFeedCosts
 import com.farmledger.app.domain.model.InventoryItemKind
+import com.farmledger.app.domain.model.PetState
 import com.farmledger.app.domain.model.PlayerProgress
 import com.farmledger.app.domain.model.PlotState
 import com.google.common.truth.Truth.assertThat
@@ -101,5 +103,26 @@ class FarmInventoryLogicTest {
         val w2 = FarmLogic.water(w1.plots, progress, 0, 3L)
         assertThat(w1.ok).isTrue()
         assertThat(w2.ok).isFalse()
+    }
+
+    @Test
+    fun feedPet_consumesFeed_notGrowthPoints() {
+        val inv = InventoryLogic.add(
+            InventoryLogic.emptyStubs(0L), InventoryItemKind.FEED, 2, 1L
+        ).inventory
+        val gp = progress.growthPoints
+        val r = FarmLogic.feedPet(PetState(), progress, inv, 5L)
+        assertThat(r.ok).isTrue()
+        assertThat(r.progress.growthPoints).isEqualTo(gp)
+        assertThat(InventoryLogic.feedQty(r.inventory))
+            .isEqualTo(2 - InventoryFeedCosts.FEED_PER_MEAL)
+    }
+
+    @Test
+    fun feedPet_failsWithoutFeed() {
+        val inv = InventoryLogic.emptyStubs(0L)
+        val r = FarmLogic.feedPet(PetState(), progress, inv, 5L)
+        assertThat(r.ok).isFalse()
+        assertThat(r.msg).contains("飼料")
     }
 }

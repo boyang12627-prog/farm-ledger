@@ -195,6 +195,21 @@
 
 ---
 
+## 7d. M3 實際素材（2026-09-22 開工・夜日結儀式＋餵養）
+
+產品開 M3 美術＝夜晚日結月亮儀式＋寵物餵食可讀＋成熟高亮。詳見 **`docs/m3_art_assets.md`**。
+
+| 類 | 實際檔名 |
+|----|----------|
+| 日結 | `ic_moon_settle`／`ic_settle_stamp`／`settle_banner`／`moon_rise_f0..f2` |
+| 寵物 | `pet_idle`／`pet_happy`／`pet_eat`（小芽豬升級） |
+| FX | `fx_heart`（刷新）／`fx_sparkle_ready` |
+| 接線 | `FarmScreen` 結算鈕＋Settle 浮層；`PetScreen`／餵食；READY sparkle |
+
+產生腳本：`scripts/gen_m3_art_assets.py`。**唔改**一日一結／改帳唔重派。
+
+---
+
 ## 8. 群組 5 行重點（可直接貼）
 
 1. **方向**：俯視暖色像素＋大方塊深輪廓；單一農場；晨昏夜用 tint。  

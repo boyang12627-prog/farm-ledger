@@ -122,10 +122,16 @@ object StageRules {
     val UNLOCK_DAYS = listOf(SPROUT_DAYS, HOMESTEAD_DAYS, THRIVING_DAYS, THRIVING_ANIMAL2_DAYS)
 }
 
-/** 場景內消耗成長點（成長點只由每日結算發放；種植改耗背包種子） */
+/** 場景內消耗成長點（成長點只由每日結算發放；種植耗種子、餵食耗飼料） */
 object GrowthSpendCosts {
+    /** @deprecated M3 起餵食改耗背包飼料，不再扣成長點 */
     const val FEED_PET = 1
     const val BUILD_DECOR = 1
+}
+
+/** M3：餵食消耗背包飼料（唔扣成長點、唔發成長點） */
+object InventoryFeedCosts {
+    const val FEED_PER_MEAL = 1
 }
 
 /** 商店標價（amountMinor；買賣只寫帳、不發成長點） */
@@ -141,6 +147,9 @@ object ShopCatalog {
         CropKind.CARROT -> 300L
         CropKind.TOMATO -> 450L
     }
+
+    /** 買飼料單價（支出入帳；唔發成長點） */
+    const val FEED_BUY_PRICE_MINOR = 80L
 }
 
 /** 日內時段（牧場物語式日循環） */
@@ -185,6 +194,7 @@ enum class InventoryItemKind(val nameZh: String) {
     CROP_WHEAT("小麥"),
     CROP_CARROT("紅蘿蔔"),
     CROP_TOMATO("番茄"),
+    FEED("飼料"),
     MATERIAL("材料");
 
     companion object {

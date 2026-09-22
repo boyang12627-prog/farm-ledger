@@ -125,14 +125,21 @@ class FarmStageLogicTest {
     }
 
     @Test
-    fun feedRequiresSproutAndSpendsGrowthPoints() {
+    fun feedRequiresSproutAndConsumesInventoryFeed_notGrowthPoints() {
+        val inv = InventoryLogic.add(
+            InventoryLogic.emptyStubs(0L), InventoryItemKind.FEED, 2, 1L
+        ).inventory
         val barren = PlayerProgress(growthPoints = 5, totalSettleDays = 0)
-        val blocked = FarmLogic.feedPet(PetState(), barren, 1L)
+        val blocked = FarmLogic.feedPet(PetState(), barren, inv, 1L)
         assertThat(blocked.ok).isFalse()
 
         val sprout = PlayerProgress(growthPoints = 5, totalSettleDays = 3)
-        val fed = FarmLogic.feedPet(PetState(), sprout, 1L)
+        val gpBefore = sprout.growthPoints
+        val fed = FarmLogic.feedPet(PetState(), sprout, inv, 1L)
         assertThat(fed.ok).isTrue()
-        assertThat(fed.progress.growthPoints).isEqualTo(4)
+        assertThat(fed.progress.growthPoints).isEqualTo(gpBefore)
+        assertThat(InventoryLogic.feedQty(fed.inventory)).isEqualTo(1)
+        assertThat(fed.msg).contains("餵食成功")
     }
 }
+

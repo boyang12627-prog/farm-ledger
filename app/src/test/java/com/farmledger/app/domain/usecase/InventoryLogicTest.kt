@@ -66,4 +66,14 @@ class InventoryLogicTest {
     fun legacySeedBag_mapsToWheat() {
         assertThat(InventoryItemKind.fromStorage("SEED_BAG")).isEqualTo(InventoryItemKind.SEED_WHEAT)
     }
+
+    @Test
+    fun buyFeed_writesExpense_addsFeed_noGrowthInTrade() {
+        val r = InventoryLogic.buyFeed(empty, 3, nowEpochMs = 10L)
+        assertThat(r.ok).isTrue()
+        assertThat(r.entryType).isEqualTo(EntryType.EXPENSE)
+        assertThat(r.amountMinor).isEqualTo(ShopCatalog.FEED_BUY_PRICE_MINOR * 3)
+        assertThat(InventoryLogic.feedQty(r.inventory)).isEqualTo(3)
+        assertThat(r.msg).contains("唔發成長點")
+    }
 }

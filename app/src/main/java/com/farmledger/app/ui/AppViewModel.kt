@@ -50,6 +50,14 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    /** M3：餵食／互動成功後場景開心／進食反饋截止時間 */
+    private val _petFeedbackUntilMs = MutableStateFlow(0L)
+    val petFeedbackUntilMs: StateFlow<Long> = _petFeedbackUntilMs.asStateFlow()
+
+    /** M3：結算儀式——剛成功發獎時供 overlay 播月亮／蓋章 */
+    private val _settleCeremonyAwarded = MutableStateFlow(false)
+    val settleCeremonyAwarded: StateFlow<Boolean> = _settleCeremonyAwarded.asStateFlow()
+
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
 
@@ -87,6 +95,7 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     fun settleToday() = viewModelScope.launch {
         val r = repo.settleToday()
         _message.value = r.messageZh
+        _settleCeremonyAwarded.value = r.awarded
     }
 
     fun claimWeekly() = viewModelScope.launch {
@@ -114,10 +123,26 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
         _message.value = repo.sellHarvest(crop, quantity)
     }
 
+    fun buyFeed(quantity: Int = 1) = viewModelScope.launch {
+        _message.value = repo.buyFeed(quantity)
+    }
+
     fun refreshFarm() = viewModelScope.launch { repo.refreshFarm() }
 
-    fun feedPet() = viewModelScope.launch { _message.value = repo.feedPet() }
-    fun interactPet() = viewModelScope.launch { _message.value = repo.interactPet() }
+    fun feedPet() = viewModelScope.launch {
+        val msg = repo.feedPet()
+        _message.value = msg
+        if (msg.contains("餵食成功")) {
+            _petFeedbackUntilMs.value = System.currentTimeMillis() + 1_600L
+        }
+    }
+    fun interactPet() = viewModelScope.launch {
+        val msg = repo.interactPet()
+        _message.value = msg
+        if (msg.contains("成功")) {
+            _petFeedbackUntilMs.value = System.currentTimeMillis() + 1_400L
+        }
+    }
     fun renamePet(name: String) = viewModelScope.launch { repo.renamePet(name) }
 
     fun toggleDecor(id: String) = viewModelScope.launch { repo.toggleDecorationPlaced(id) }
@@ -139,6 +164,7 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     }
 
     fun consumeMessage() { _message.value = null }
+    fun consumeSettleCeremony() { _settleCeremonyAwarded.value = false }
 
     fun entryById(id: String): LedgerEntry? = _entries.value.find { it.id == id }
 }

@@ -3,6 +3,7 @@ package com.farmledger.app.domain.usecase
 import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.GrowthSpendCosts
+import com.farmledger.app.domain.model.InventoryFeedCosts
 import com.farmledger.app.domain.model.InventoryItem
 import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.StageRules
@@ -34,6 +35,15 @@ data class HarvestResult(
 )
 
 data class SpendResult(val progress: PlayerProgress, val pet: PetState? = null, val ok: Boolean, val msg: String)
+
+/** M3：餵食結果——扣背包飼料，唔扣成長點 */
+data class FeedResult(
+    val progress: PlayerProgress,
+    val pet: PetState?,
+    val inventory: List<InventoryItem>,
+    val ok: Boolean,
+    val msg: String
+)
 
 object FarmLogic {
 
@@ -170,28 +180,38 @@ object FarmLogic {
         )
     }
 
-    /** 餵食：消耗成長點；須有寵物欄位（萌芽起）。 */
+    /** 餵食：消耗背包飼料；須有寵物欄位（萌芽起）。唔扣／唔發成長點。 */
     fun feedPet(
         pet: PetState,
         progress: PlayerProgress,
+        inventory: List<InventoryItem>,
         now: Long
-    ): SpendResult {
+    ): FeedResult {
         if (progress.clockPaused) {
-            return SpendResult(progress, pet, false, "時鐘倒退中，寵物互動暫停。")
+            return FeedResult(progress, pet, inventory, false, "時鐘倒退中，寵物互動暫停。")
         }
         val caps = FarmStageLogic.capabilities(progress.totalSettleDays)
         if (caps.petFeedSlots < 1) {
-            return SpendResult(progress, pet, false, "萌芽階段起才可餵食（累計結算 ${StageRules.SPROUT_DAYS} 日）。")
+            return FeedResult(
+                progress, pet, inventory, false,
+                "萌芽階段起才可餵食（累計結算 ${StageRules.SPROUT_DAYS} 日）。"
+            )
         }
-        val cost = GrowthSpendCosts.FEED_PET
-        if (progress.growthPoints < cost) {
-            return SpendResult(progress, pet, false, "成長點不足（需要 $cost）。")
+        val cost = InventoryFeedCosts.FEED_PER_MEAL
+        val removed = InventoryLogic.remove(inventory, InventoryItemKind.FEED, cost, now)
+        if (!removed.ok) {
+            return FeedResult(progress, pet, inventory, false, "飼料不足，請去商店買飼料。")
         }
         val hunger = (pet.hunger - 20).coerceAtLeast(0)
         val affection = (pet.affection + 5).coerceAtMost(100)
         val updatedPet = pet.copy(hunger = hunger, affection = affection, lastFedEpochMs = now)
-        val updatedProgress = progress.copy(growthPoints = progress.growthPoints - cost)
-        return SpendResult(updatedProgress, updatedPet, true, "餵食成功！成長點 -$cost")
+        return FeedResult(
+            progress = progress,
+            pet = updatedPet,
+            inventory = removed.inventory,
+            ok = true,
+            msg = "餵食成功！寵物開心拍食（飼料 -$cost）"
+        )
     }
 
     fun interactPet(pet: PetState, now: Long, clockPaused: Boolean): Pair<PetState, String> {
