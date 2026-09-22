@@ -113,7 +113,7 @@ fun FarmSceneLayer(
         else -> grassBarren
     }
 
-    val phaseTint = Color(DayPhaseLogic.phaseTintArgb(dayPhase))
+    val phaseTint = Color(DayPhaseLogic.phaseTintArgb(dayPhase).toInt())
     val overlayRes = when (dayPhase) {
         DayPhase.MORNING -> R.drawable.overlay_dawn
         DayPhase.NOON -> R.drawable.overlay_day
@@ -265,8 +265,7 @@ fun FarmSceneLayer(
                 painter = painterResource(overlayRes),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds,
-                filterQuality = FilterQuality.None
+                contentScale = ContentScale.FillBounds
             )
         } else if (phaseTint.alpha > 0.001f) {
             Box(Modifier.fillMaxSize().background(phaseTint))
@@ -285,8 +284,7 @@ fun FarmSceneLayer(
                 painter = painterResource(R.drawable.ic_clock),
                 contentDescription = "時段",
                 modifier = Modifier.size(18.dp),
-                contentScale = ContentScale.FillBounds,
-                filterQuality = FilterQuality.None
+                contentScale = ContentScale.FillBounds
             )
             Text(
                 " ${dayPhase.nameZh}",
@@ -301,8 +299,7 @@ fun FarmSceneLayer(
                     modifier = Modifier
                         .padding(start = 6.dp)
                         .size(16.dp),
-                    contentScale = ContentScale.FillBounds,
-                    filterQuality = FilterQuality.None
+                    contentScale = ContentScale.FillBounds
                 )
                 Text(
                     " $growthPoints",
