@@ -27,6 +27,7 @@ import com.farmledger.app.domain.usecase.DailySettlementLogic
 import com.farmledger.app.domain.usecase.DayPhaseLogic
 import com.farmledger.app.domain.usecase.DayPhaseResult
 import com.farmledger.app.domain.usecase.FarmLogic
+import com.farmledger.app.domain.usecase.InventoryLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.usecase.SettlementResult
 import com.farmledger.app.domain.usecase.WeeklyReviewLogic
@@ -119,19 +120,48 @@ class FarmLedgerRepository(
         return result
     }
 
-    /** M2 stub：確保預設背包列存在（數量 0，不影響成長點） */
+    /**
+     * 確保背包列齊全；首次以 progress.seeds 遷移為小麥種子。
+     * 買賣／種植／收成皆經背包；數量唔發成長點。
+     */
     suspend fun ensureInventoryStubs() {
-        if (inventoryDao.getAll().isNotEmpty()) return
         val now = System.currentTimeMillis()
-        val stubs = InventoryItemKind.entries.map { kind ->
-            InventoryItemEntity(
+        val existing = inventoryDao.getAll().map { it.toDomain() }
+        val progress = prefs.progressFlow.first()
+        var inv = InventoryLogic.ensureKinds(existing, now)
+        // 遷移舊 SEED_BAG → SEED_WHEAT（fromStorage 已處理 kind；合併同 kind）
+        inv = mergeInventoryByKind(inv, now)
+        val seedTotal = InventoryLogic.totalSeeds(inv)
+        if (seedTotal == 0 && progress.seeds > 0) {
+            inv = InventoryLogic.add(inv, InventoryItemKind.SEED_WHEAT, progress.seeds, now).inventory
+        } else if (existing.isEmpty() && seedTotal == 0) {
+            // 新玩家起步種子
+            inv = InventoryLogic.add(inv, InventoryItemKind.SEED_WHEAT, 3, now).inventory
+        }
+        inventoryDao.upsertAll(inv.map { it.toEntity() })
+    }
+
+    private fun mergeInventoryByKind(items: List<InventoryItem>, now: Long): List<InventoryItem> {
+        val sums = linkedMapOf<InventoryItemKind, Int>()
+        InventoryItemKind.entries.forEach { sums[it] = 0 }
+        items.forEach { sums[it.kind] = (sums[it.kind] ?: 0) + it.quantity.coerceAtLeast(0) }
+        return InventoryItemKind.entries.map { kind ->
+            InventoryItem(
                 id = kind.name.lowercase(),
-                kind = kind.name,
-                quantity = 0,
+                kind = kind,
+                quantity = sums.getValue(kind),
                 updatedAtEpochMs = now
             )
         }
-        inventoryDao.upsertAll(stubs)
+    }
+
+    private suspend fun loadInventory(now: Long = System.currentTimeMillis()): List<InventoryItem> {
+        val raw = inventoryDao.getAll().map { it.toDomain() }
+        return mergeInventoryByKind(InventoryLogic.ensureKinds(raw, now), now)
+    }
+
+    private suspend fun saveInventory(items: List<InventoryItem>) {
+        inventoryDao.upsertAll(items.map { it.toEntity() })
     }
 
     suspend fun clearClockPause() {
@@ -217,6 +247,13 @@ class FarmLedgerRepository(
                 )
             }
             prefs.saveProgress(result.progress)
+            // 連續結算種子加成入背包（唔發成長點）
+            val seedDelta = result.progress.seeds - progress.seeds
+            if (seedDelta > 0) {
+                val now = System.currentTimeMillis()
+                val inv = InventoryLogic.grantStreakSeeds(loadInventory(now), seedDelta, now)
+                saveInventory(inv)
+            }
             // 解鎖裝飾：連續 3/5/7
             unlockDecorForStreak(result.progress)
         }
@@ -251,28 +288,79 @@ class FarmLedgerRepository(
 
     suspend fun plant(plotIndex: Int, crop: CropKind): String {
         syncClock()
+        ensureInventoryStubs()
+        val now = System.currentTimeMillis()
         val progress = prefs.progressFlow.first()
-        val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), System.currentTimeMillis(), progress.clockPaused)
-        val r = FarmLogic.plant(plots, progress, plotIndex, crop, System.currentTimeMillis())
+        val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), now, progress.clockPaused)
+        val inv = loadInventory(now)
+        val r = FarmLogic.plant(plots, progress, inv, plotIndex, crop, now)
         if (r.ok) {
             prefs.savePlots(r.plots)
-            prefs.saveProgress(r.progress)
+            saveInventory(r.inventory)
+            // 同步舊 seeds 顯示欄（以背包總種子為準）
+            prefs.saveProgress(r.progress.copy(seeds = InventoryLogic.totalSeeds(r.inventory)))
         }
+        return r.msg
+    }
+
+    suspend fun water(plotIndex: Int): String {
+        syncClock()
+        val now = System.currentTimeMillis()
+        val progress = prefs.progressFlow.first()
+        val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), now, progress.clockPaused)
+        val r = FarmLogic.water(plots, progress, plotIndex, now)
+        if (r.ok) prefs.savePlots(r.plots)
         return r.msg
     }
 
     suspend fun harvest(plotIndex: Int): String {
         syncClock()
+        ensureInventoryStubs()
+        val now = System.currentTimeMillis()
         val progress = prefs.progressFlow.first()
-        val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), System.currentTimeMillis(), progress.clockPaused)
-        val r = FarmLogic.harvest(plots, progress, plotIndex, System.currentTimeMillis())
+        val plots = FarmLogic.refreshPlots(prefs.plotsFlow.first(), now, progress.clockPaused)
+        val inv = loadInventory(now)
+        val r = FarmLogic.harvest(plots, progress, inv, plotIndex, now)
         if (r.ok) {
             prefs.savePlots(r.plots)
-            prefs.saveProgress(r.progress)
+            saveInventory(r.inventory)
+            prefs.saveProgress(r.progress.copy(seeds = InventoryLogic.totalSeeds(r.inventory)))
         } else {
             prefs.savePlots(plots)
         }
         return r.msg
+    }
+
+    /**
+     * 買種子：經背包入庫並寫支出帳。金額／筆數唔發成長點。
+     */
+    suspend fun buySeeds(crop: CropKind, quantity: Int = 1): String {
+        syncClock()
+        ensureInventoryStubs()
+        val now = System.currentTimeMillis()
+        val inv = loadInventory(now)
+        val trade = InventoryLogic.buySeeds(inv, crop, quantity, now)
+        if (!trade.ok || trade.entryType == null) return trade.msg
+        saveInventory(trade.inventory)
+        val progress = prefs.progressFlow.first()
+        prefs.saveProgress(progress.copy(seeds = InventoryLogic.totalSeeds(trade.inventory)))
+        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        return trade.msg
+    }
+
+    /**
+     * 賣收成：經背包出庫並寫收入帳。金額／筆數唔發成長點。
+     */
+    suspend fun sellHarvest(crop: CropKind, quantity: Int = 1): String {
+        syncClock()
+        ensureInventoryStubs()
+        val now = System.currentTimeMillis()
+        val inv = loadInventory(now)
+        val trade = InventoryLogic.sellHarvest(inv, crop, quantity, now)
+        if (!trade.ok || trade.entryType == null) return trade.msg
+        saveInventory(trade.inventory)
+        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        return trade.msg
     }
 
     suspend fun refreshFarm() {
@@ -481,7 +569,7 @@ private fun GameDayState.toEntity() = GameDayStateEntity(
 
 private fun InventoryItemEntity.toDomain() = InventoryItem(
     id = id,
-    kind = runCatching { InventoryItemKind.valueOf(kind) }.getOrDefault(InventoryItemKind.MATERIAL),
+    kind = InventoryItemKind.fromStorage(kind),
     quantity = quantity,
     updatedAtEpochMs = updatedAtEpochMs
 )

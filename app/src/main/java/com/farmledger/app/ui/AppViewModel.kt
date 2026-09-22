@@ -40,7 +40,7 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     val gameDay: StateFlow<GameDayState> = repo.gameDayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GameDayState())
 
-    /** M2 stub */
+    /** M2 背包：種子／收成堆疊 */
     val inventory: StateFlow<List<InventoryItem>> = repo.inventoryFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -98,8 +98,20 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
         _message.value = repo.plant(index, crop)
     }
 
+    fun water(index: Int) = viewModelScope.launch {
+        _message.value = repo.water(index)
+    }
+
     fun harvest(index: Int) = viewModelScope.launch {
         _message.value = repo.harvest(index)
+    }
+
+    fun buySeeds(crop: CropKind, quantity: Int = 1) = viewModelScope.launch {
+        _message.value = repo.buySeeds(crop, quantity)
+    }
+
+    fun sellHarvest(crop: CropKind, quantity: Int = 1) = viewModelScope.launch {
+        _message.value = repo.sellHarvest(crop, quantity)
     }
 
     fun refreshFarm() = viewModelScope.launch { repo.refreshFarm() }

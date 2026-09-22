@@ -178,6 +178,23 @@
 
 ---
 
+## 7c. M2 實際素材（2026-09-22 開工・種收＋欄＋買賣視覺）
+
+產品開 M2 美術＝場內種收可讀＋物品欄 stub 有圖＋記帳本／買袋／賣籃獨特 icon。詳見 **`docs/m2_art_assets.md`**。
+
+| 類 | 實際檔名 |
+|----|----------|
+| 作物 | `crop_{wheat,carrot,tomato}_{seed,grow,ready}`（刷新深描邊） |
+| 工具／手 | `ic_tool_hoe`／`cursor_hand`／`ic_tool_water` |
+| 記帳 | `ic_ledger_book`＋`_f1`／`_f2` 翻頁 |
+| 買賣 | `ic_buy_bag`／`ic_sell_basket`／`ic_coin_plus`／`ic_coin_minus` |
+| 物品欄 | `item_seed_*`／`item_harvest_*`／`item_material` |
+| 接線 | `FarmScreen`：記帳鈕、選種 chip、種植／收成、inventory 橫列 |
+
+產生腳本：`scripts/gen_m2_art_assets.py`。**唔改**獎勵／防刷。
+
+---
+
 ## 8. 群組 5 行重點（可直接貼）
 
 1. **方向**：俯視暖色像素＋大方塊深輪廓；單一農場；晨昏夜用 tint。  

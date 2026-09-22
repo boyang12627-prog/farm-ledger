@@ -12,8 +12,9 @@
 - **連續結算 3／5／7 日**：另解鎖種子加成與裝飾（偏外觀）
 - **週回顧**：按本週結算天數發獎，**上限 3 點**
 - **時鐘倒退**：暫停每日／作物獎勵，**不刪除帳本**
-- **單一農場主世界**：記帳／結算為 overlay；成長點於場景內花費種植／餵食／佈置
-- **農田**：階段解鎖田格（荒地 2 格→萌芽 6 格）、3 種作物種植→等待→收成（收成不發成長點）
+- **單一農場主世界**：記帳／結算／商店為 overlay；成長點於場景內花費餵食／佈置（種植改耗種子）
+- **農田／背包（M2）**：種／澆／收用背包種子與收成堆疊；商店買種子＝支出、賣收成＝收入（金額唔發成長點）
+- **農田**：階段解鎖田格（荒地 2 格→萌芽 6 格）、3 種作物種植→澆水→收成入庫（收成不發成長點）
 - **寵物**：餵食、互動、改名
 - **家居裝飾**：7 件佔位裝飾（暖色像素風；含小屋／樹木場景裝飾）
 - **匯出／匯入**：JSON 全量備份、CSV 帳目，經系統 SAF 檔案選擇器
@@ -67,6 +68,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - `app/src/test/.../DailySettlementLogicTest.kt`
 - `app/src/test/.../WeeklyReviewLogicTest.kt`
 - `app/src/test/.../FarmStageLogicTest.kt`
+- `app/src/test/.../DayPhaseLogicTest.kt`
+- `app/src/test/.../InventoryLogicTest.kt`
+- `app/src/test/.../FarmInventoryLogicTest.kt`
 
 ## 技術棧
 

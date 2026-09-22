@@ -1,11 +1,11 @@
 package com.farmledger.app.domain.usecase
 
 import com.farmledger.app.domain.model.CropKind
+import com.farmledger.app.domain.model.InventoryItemKind
+import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.FarmStage
-import com.farmledger.app.domain.model.GrowthSpendCosts
 import com.farmledger.app.domain.model.PetState
 import com.farmledger.app.domain.model.PlayerProgress
-import com.farmledger.app.domain.model.Plot
 import com.farmledger.app.domain.model.PlotState
 import com.farmledger.app.domain.model.StageRules
 import com.google.common.truth.Truth.assertThat
@@ -79,27 +79,47 @@ class FarmStageLogicTest {
     }
 
     @Test
-    fun plantSpendsGrowthPoints_notAwardedOnHarvest() {
+    fun plantSpendsInventorySeeds_notAwardedOnHarvest() {
         val progress = PlayerProgress(growthPoints = 5, totalSettleDays = 3)
         val plots = FarmLogic.defaultPlots()
-        val planted = FarmLogic.plant(plots, progress, 0, CropKind.WHEAT, now = 1_000L)
+        val inv0 = InventoryLogic.add(
+            InventoryLogic.emptyStubs(0L),
+            InventoryItemKind.SEED_WHEAT,
+            3,
+            1L
+        ).inventory
+        val planted = FarmLogic.plant(plots, progress, inv0, 0, CropKind.WHEAT, now = 1_000L)
         assertThat(planted.ok).isTrue()
-        assertThat(planted.progress.growthPoints).isEqualTo(5 - GrowthSpendCosts.plant(CropKind.WHEAT))
+        // 種植耗背包種子，唔扣成長點
+        assertThat(planted.progress.growthPoints).isEqualTo(5)
+        assertThat(InventoryLogic.seedQty(planted.inventory, CropKind.WHEAT))
+            .isEqualTo(3 - CropTimers.seedCost(CropKind.WHEAT))
 
         val growing = planted.plots.map {
-            if (it.index == 0) it.copy(state = PlotState.READY, crop = CropKind.WHEAT) else it
+            if (it.index == 0) it.copy(
+                state = PlotState.READY,
+                crop = CropKind.WHEAT,
+                watered = true
+            ) else it
         }
-        val harvested = FarmLogic.harvest(growing, planted.progress, 0, now = 2_000L)
+        val harvested = FarmLogic.harvest(growing, planted.progress, planted.inventory, 0, now = 2_000L)
         assertThat(harvested.ok).isTrue()
-        // 收成不發成長點
+        // 收成不發成長點；作物入背包
         assertThat(harvested.progress.growthPoints).isEqualTo(planted.progress.growthPoints)
-        assertThat(harvested.progress.seeds).isGreaterThan(planted.progress.seeds)
+        assertThat(InventoryLogic.cropQty(harvested.inventory, CropKind.WHEAT))
+            .isGreaterThan(InventoryLogic.cropQty(planted.inventory, CropKind.WHEAT))
     }
 
     @Test
     fun plantBlocked_onLockedPlot() {
         val progress = PlayerProgress(growthPoints = 10, totalSettleDays = 0) // 荒地
-        val r = FarmLogic.plant(FarmLogic.defaultPlots(), progress, 3, CropKind.WHEAT, 1L)
+        val inv = InventoryLogic.add(
+            InventoryLogic.emptyStubs(0L),
+            InventoryItemKind.SEED_WHEAT,
+            5,
+            1L
+        ).inventory
+        val r = FarmLogic.plant(FarmLogic.defaultPlots(), progress, inv, 3, CropKind.WHEAT, 1L)
         assertThat(r.ok).isFalse()
         assertThat(r.msg).contains("開墾")
     }

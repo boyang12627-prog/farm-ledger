@@ -3,97 +3,171 @@ package com.farmledger.app.domain.usecase
 import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.GrowthSpendCosts
+import com.farmledger.app.domain.model.InventoryItem
+import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.StageRules
 import com.farmledger.app.domain.model.PetState
 import com.farmledger.app.domain.model.PlayerProgress
 import com.farmledger.app.domain.model.Plot
 import com.farmledger.app.domain.model.PlotState
 
-data class PlantResult(val plots: List<Plot>, val progress: PlayerProgress, val ok: Boolean, val msg: String)
-data class HarvestResult(val plots: List<Plot>, val progress: PlayerProgress, val ok: Boolean, val msg: String)
+data class PlantResult(
+    val plots: List<Plot>,
+    val inventory: List<InventoryItem>,
+    val progress: PlayerProgress,
+    val ok: Boolean,
+    val msg: String
+)
+
+data class WaterResult(
+    val plots: List<Plot>,
+    val ok: Boolean,
+    val msg: String
+)
+
+data class HarvestResult(
+    val plots: List<Plot>,
+    val inventory: List<InventoryItem>,
+    val progress: PlayerProgress,
+    val ok: Boolean,
+    val msg: String
+)
+
 data class SpendResult(val progress: PlayerProgress, val pet: PetState? = null, val ok: Boolean, val msg: String)
 
 object FarmLogic {
 
     fun defaultPlots(): List<Plot> = (0 until 6).map { Plot(index = it) }
 
+    /**
+     * 刷新田格：僅已澆水的 GROWING 可於 readyAt 轉 READY。
+     * 時鐘暫停時不推進。
+     */
     fun refreshPlots(plots: List<Plot>, now: Long, clockPaused: Boolean): List<Plot> {
         if (clockPaused) return plots
         return plots.map { p ->
-            if (p.state == PlotState.GROWING && p.readyAtEpochMs != null && now >= p.readyAtEpochMs) {
+            if (
+                p.state == PlotState.GROWING &&
+                p.watered &&
+                p.readyAtEpochMs != null &&
+                now >= p.readyAtEpochMs
+            ) {
                 p.copy(state = PlotState.READY)
             } else p
         }
     }
 
     /**
-     * 種植：消耗成長點（非種子）。田位須已由累計結算日解鎖。
-     * 成長點只由每日結算發放；此處只扣點。
+     * 種植：消耗背包種子（非成長點）。田位須已解鎖。
+     * 種下後須澆水才開始計時。
      */
     fun plant(
         plots: List<Plot>,
         progress: PlayerProgress,
+        inventory: List<InventoryItem>,
         plotIndex: Int,
         crop: CropKind,
         now: Long
     ): PlantResult {
         if (progress.clockPaused) {
-            return PlantResult(plots, progress, false, "時鐘倒退中，作物獎勵／種植暫停。")
+            return PlantResult(plots, inventory, progress, false, "時鐘倒退中，種植暫停。")
         }
         if (!FarmStageLogic.isPlotUnlocked(progress.totalSettleDays, plotIndex)) {
             val caps = FarmStageLogic.capabilities(progress.totalSettleDays)
             return PlantResult(
-                plots, progress, false,
+                plots, inventory, progress, false,
                 "此田尚未開墾（${caps.stage.nameZh}僅開放 ${caps.unlockedPlotCount} 格）。繼續每日結算可解鎖。"
             )
         }
-        val cost = GrowthSpendCosts.plant(crop)
-        if (progress.growthPoints < cost) {
-            return PlantResult(plots, progress, false, "成長點不足（需要 $cost）。請先完成每日結算。")
-        }
         val plot = plots.getOrNull(plotIndex)
-            ?: return PlantResult(plots, progress, false, "無效田地。")
+            ?: return PlantResult(plots, inventory, progress, false, "無效田地。")
         if (plot.state != PlotState.EMPTY) {
-            return PlantResult(plots, progress, false, "此田已有作物。")
+            return PlantResult(plots, inventory, progress, false, "此田已有作物。")
         }
-        val ready = now + CropTimers.growMs(crop)
+        val cost = CropTimers.seedCost(crop)
+        val seedKind = InventoryItemKind.seedOf(crop)
+        val removed = InventoryLogic.remove(inventory, seedKind, cost, now)
+        if (!removed.ok) {
+            return PlantResult(plots, inventory, progress, false, "種子不足：${removed.msg} 可到商店購買。")
+        }
         val updatedPlots = plots.map {
             if (it.index == plotIndex) Plot(
                 index = plotIndex,
                 state = PlotState.GROWING,
                 crop = crop,
                 plantedAtEpochMs = now,
-                readyAtEpochMs = ready
+                readyAtEpochMs = null,
+                watered = false
             ) else it
         }
-        val updatedProgress = progress.copy(growthPoints = progress.growthPoints - cost)
-        return PlantResult(updatedPlots, updatedProgress, true, "已種植${cropZh(crop)}！成長點 -$cost")
+        return PlantResult(
+            updatedPlots,
+            removed.inventory,
+            progress,
+            true,
+            "已種植${cropZh(crop)}（種子 -$cost）。請澆水開始成長！"
+        )
     }
 
     /**
-     * 收成：只給種子，不發成長點（成長點只由每日結算發放）。
+     * 澆水：GROWING 且未澆水 → 開始成長計時。不發成長點、不改背包。
      */
-    fun harvest(
+    fun water(
         plots: List<Plot>,
         progress: PlayerProgress,
         plotIndex: Int,
         now: Long
-    ): HarvestResult {
+    ): WaterResult {
         if (progress.clockPaused) {
-            return HarvestResult(plots, progress, false, "時鐘倒退中，收成暫停。")
+            return WaterResult(plots, false, "時鐘倒退中，澆水暫停。")
         }
         val plot = plots.getOrNull(plotIndex)
-            ?: return HarvestResult(plots, progress, false, "無效田地。")
+            ?: return WaterResult(plots, false, "無效田地。")
+        if (plot.state != PlotState.GROWING || plot.crop == null) {
+            return WaterResult(plots, false, "此田無需澆水。")
+        }
+        if (plot.watered) {
+            return WaterResult(plots, false, "已經澆過水。")
+        }
+        val ready = now + CropTimers.growMs(plot.crop)
+        val updated = plots.map {
+            if (it.index == plotIndex) it.copy(watered = true, readyAtEpochMs = ready) else it
+        }
+        return WaterResult(updated, true, "已澆水！${cropZh(plot.crop)}開始成長。")
+    }
+
+    /**
+     * 收成：作物進背包堆疊，不發成長點。
+     */
+    fun harvest(
+        plots: List<Plot>,
+        progress: PlayerProgress,
+        inventory: List<InventoryItem>,
+        plotIndex: Int,
+        now: Long
+    ): HarvestResult {
+        if (progress.clockPaused) {
+            return HarvestResult(plots, inventory, progress, false, "時鐘倒退中，收成暫停。")
+        }
+        val plot = plots.getOrNull(plotIndex)
+            ?: return HarvestResult(plots, inventory, progress, false, "無效田地。")
         val refreshed = refreshPlots(listOf(plot), now, false).first()
         if (refreshed.state != PlotState.READY || refreshed.crop == null) {
-            return HarvestResult(plots, progress, false, "尚未可收成。")
+            return HarvestResult(plots, inventory, progress, false, "尚未可收成。")
         }
-        val bonus = CropTimers.harvestSeeds(refreshed.crop)
+        val yield = CropTimers.harvestYield(refreshed.crop)
+        val cropKind = InventoryItemKind.cropOf(refreshed.crop)
+        val added = InventoryLogic.add(inventory, cropKind, yield, now)
         val updatedPlots = plots.map {
             if (it.index == plotIndex) Plot(index = plotIndex) else it
         }
-        val updatedProgress = progress.copy(seeds = progress.seeds + bonus)
-        return HarvestResult(updatedPlots, updatedProgress, true, "收成！種子 +$bonus")
+        return HarvestResult(
+            updatedPlots,
+            added.inventory,
+            progress,
+            true,
+            "收成！${cropZh(refreshed.crop)} +$yield（已入背包，唔發成長點）"
+        )
     }
 
     /** 餵食：消耗成長點；須有寵物欄位（萌芽起）。 */
@@ -155,4 +229,3 @@ object FarmLogic {
         CropKind.TOMATO -> "番茄"
     }
 }
-

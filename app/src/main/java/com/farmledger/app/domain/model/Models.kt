@@ -35,7 +35,9 @@ data class Plot(
     val state: PlotState = PlotState.EMPTY,
     val crop: CropKind? = null,
     val plantedAtEpochMs: Long? = null,
-    val readyAtEpochMs: Long? = null
+    val readyAtEpochMs: Long? = null,
+    /** M2：澆水後才開始成長計時；未澆水唔會變 READY */
+    val watered: Boolean = false
 )
 
 @Serializable
@@ -58,6 +60,7 @@ data class Decoration(
 @Serializable
 data class PlayerProgress(
     val growthPoints: Int = 0,
+    /** 舊欄位：M2 起種子以 inventory 為準；保留作遷移／相容 */
     val seeds: Int = 3,
     val streakDays: Int = 0,
     /** 累計成功結算日數（每本地日最多 +1；用於階段解鎖，非記帳筆數） */
@@ -85,16 +88,23 @@ object CropTimers {
         CropKind.CARROT -> 120_000L    // 2 分鐘
         CropKind.TOMATO -> 180_000L    // 3 分鐘
     }
+
+    /** 種植消耗背包種子數 */
     fun seedCost(kind: CropKind): Int = when (kind) {
         CropKind.WHEAT -> 1
         CropKind.CARROT -> 1
         CropKind.TOMATO -> 2
     }
-    fun harvestSeeds(kind: CropKind): Int = when (kind) {
+
+    /** 收成進背包的作物堆疊數（不發成長點） */
+    fun harvestYield(kind: CropKind): Int = when (kind) {
         CropKind.WHEAT -> 2
         CropKind.CARROT -> 2
         CropKind.TOMATO -> 3
     }
+
+    @Deprecated("改用 harvestYield；舊名保留相容")
+    fun harvestSeeds(kind: CropKind): Int = harvestYield(kind)
 }
 
 object RewardRules {
@@ -112,11 +122,25 @@ object StageRules {
     val UNLOCK_DAYS = listOf(SPROUT_DAYS, HOMESTEAD_DAYS, THRIVING_DAYS, THRIVING_ANIMAL2_DAYS)
 }
 
-/** 場景內消耗成長點（成長點只由每日結算發放） */
+/** 場景內消耗成長點（成長點只由每日結算發放；種植改耗背包種子） */
 object GrowthSpendCosts {
-    fun plant(kind: CropKind): Int = CropTimers.seedCost(kind)
     const val FEED_PET = 1
     const val BUILD_DECOR = 1
+}
+
+/** 商店標價（amountMinor；買賣只寫帳、不發成長點） */
+object ShopCatalog {
+    fun seedBuyPriceMinor(kind: CropKind): Long = when (kind) {
+        CropKind.WHEAT -> 100L
+        CropKind.CARROT -> 150L
+        CropKind.TOMATO -> 200L
+    }
+
+    fun cropSellPriceMinor(kind: CropKind): Long = when (kind) {
+        CropKind.WHEAT -> 200L
+        CropKind.CARROT -> 300L
+        CropKind.TOMATO -> 450L
+    }
 }
 
 /** 日內時段（牧場物語式日循環） */
@@ -153,8 +177,35 @@ data class GameDayState(
     val updatedAtEpochMs: Long = 0L
 )
 
-/** M2 預留：背包物品種類 stub（尚未接商店／收成入庫） */
-enum class InventoryItemKind { SEED_BAG, CROP_WHEAT, CROP_CARROT, CROP_TOMATO, MATERIAL }
+/** M2：背包物品——種子／收成堆疊 */
+enum class InventoryItemKind(val nameZh: String) {
+    SEED_WHEAT("小麥種子"),
+    SEED_CARROT("紅蘿蔔種子"),
+    SEED_TOMATO("番茄種子"),
+    CROP_WHEAT("小麥"),
+    CROP_CARROT("紅蘿蔔"),
+    CROP_TOMATO("番茄"),
+    MATERIAL("材料");
+
+    companion object {
+        fun seedOf(crop: CropKind): InventoryItemKind = when (crop) {
+            CropKind.WHEAT -> SEED_WHEAT
+            CropKind.CARROT -> SEED_CARROT
+            CropKind.TOMATO -> SEED_TOMATO
+        }
+
+        fun cropOf(crop: CropKind): InventoryItemKind = when (crop) {
+            CropKind.WHEAT -> CROP_WHEAT
+            CropKind.CARROT -> CROP_CARROT
+            CropKind.TOMATO -> CROP_TOMATO
+        }
+
+        fun fromStorage(name: String): InventoryItemKind = when (name) {
+            "SEED_BAG" -> SEED_WHEAT // M1 stub 遷移
+            else -> entries.find { it.name == name } ?: MATERIAL
+        }
+    }
+}
 
 @Serializable
 data class InventoryItem(
