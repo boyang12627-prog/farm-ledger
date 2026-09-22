@@ -6,7 +6,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA | （見本檔底部／git rev-parse；推送後填入） |
+| Commit SHA | `393f7813244dc1123fabc2a8defbac52f375cfc5`（短：`393f781`） |
 | 說明 | M2：場內種／澆／收＋背包種子與收成堆疊；買種子／賣收成寫帳（唔發成長點） |
 | 前身 M1 | `a04d216`／記錄 `618a14e` |
 | 分支 | `main` |
@@ -49,3 +49,7 @@
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+## 基準提交記錄
+
+- M2 art+inventory：`393f781`（2026-09-22）
