@@ -54,8 +54,7 @@ private const val HappyMs = 1_400L
 
 /**
  * 單一農場場景層：依階段能力顯示荒地／草地邊緣／柵欄／小屋／寵物；
- * M1 另接時段 Color tint（或 overlay_* drawable）＋角落 HUD（時鐘／成長點）。
- * 純 UI — 不改動結算發獎規則。
+ * M1 時段 tint＋HUD；M4 商店攤／攤主／擴建地／decor 可玩節點（點擊開商店）；純 UI — 唔改結算發獎。
  */
 @Composable
 fun FarmSceneLayer(
@@ -69,6 +68,9 @@ fun FarmSceneLayer(
     /** 外部餵食／互動成功時傳入截止 epoch，觸發開心／進食姿 */
     petFeedbackUntilMs: Long = 0L,
     onPetTap: () -> Unit = {},
+    /** M4：點擊商店攤位 → 開商店 overlay（買賣入帳；唔發成長點） */
+    onShopTap: () -> Unit = {},
+    shopHighlight: Boolean = false,
 ) {
     var happyUntilMs by remember { mutableLongStateOf(0L) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -112,6 +114,15 @@ fun FarmSceneLayer(
     val treePine = ImageBitmap.imageResource(R.drawable.tree_pine)
     val treeShadow = ImageBitmap.imageResource(R.drawable.tree_shadow)
     val bush = ImageBitmap.imageResource(R.drawable.bush)
+    val shopStall = ImageBitmap.imageResource(R.drawable.shop_stall)
+    val shopSignBmp = ImageBitmap.imageResource(R.drawable.shop_sign)
+    val vendorIdle = ImageBitmap.imageResource(R.drawable.npc_vendor_idle)
+    val buildPlot = ImageBitmap.imageResource(R.drawable.build_plot_empty)
+    val blueprint = ImageBitmap.imageResource(R.drawable.build_blueprint)
+    val decorLamp = ImageBitmap.imageResource(R.drawable.decor_lamp)
+    val decorFlower = ImageBitmap.imageResource(R.drawable.decor_flowerbox)
+    val decorSignBmp = ImageBitmap.imageResource(R.drawable.decor_sign)
+    val decorScarecrow = ImageBitmap.imageResource(R.drawable.decor_scarecrow)
     val petIdle = ImageBitmap.imageResource(R.drawable.pet_idle)
     val petHappy = ImageBitmap.imageResource(R.drawable.pet_happy)
     val petEat = ImageBitmap.imageResource(R.drawable.pet_eat)
@@ -214,10 +225,72 @@ fun FarmSceneLayer(
                 decor(hut, 2f, 48f, 48f, 48f)
             } else if (!capabilities.showGrassEdges) {
                 decor(hutRuin, 2f, 48f, 48f, 48f)
+            } else if (capabilities.smallExpansion) {
+                // 萌芽擴建節點：空地＋藍圖
+                decor(buildPlot, 6f, 54f, 32f, 32f)
+                decor(blueprint, 10f, 50f, 28f, 28f)
             }
             if (placedDecorIds.isNotEmpty() && capabilities.decorSlots > 0) {
-                decor(bush, 70f, 68f, 24f, 20f)
+                val ids = placedDecorIds.toList()
+                fun placeDecor(id: String, x: Float, y: Float) {
+                    when (id) {
+                        "lantern" -> decor(decorLamp, x, y, 28f, 28f)
+                        "flowerbed" -> decor(decorFlower, x, y, 28f, 28f)
+                        "scarecrow" -> decor(decorScarecrow, x, y - 4f, 30f, 30f)
+                        "well", "bench", "windchime", "fence" -> decor(decorSignBmp, x, y, 26f, 26f)
+                        else -> decor(bush, x, y + 4f, 24f, 20f)
+                    }
+                }
+                if (ids.isNotEmpty()) placeDecor(ids[0], 68f, 56f)
+                if (ids.size >= 2) placeDecor(ids[1], 96f, 58f)
             }
+            // M4 招牌（攤位本體喺下方可點 Image）
+            if (capabilities.showHut || capabilities.showGrassEdges) {
+                decor(shopSignBmp, 138f, 28f, 22f, 22f)
+            }
+        }
+
+        // M4 商店攤位＋攤主熱區 — evening highlight via shopHighlight
+        val shopW = maxWidth * (44f / SceneW)
+        val shopH = maxHeight * (44f / SceneH)
+        Image(
+            bitmap = shopStall,
+            contentDescription = if (shopHighlight) "黃昏商店攤位" else "商店攤位",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = maxWidth * (112f / SceneW), y = maxHeight * (38f / SceneH))
+                .size(width = shopW, height = shopH)
+                .then(
+                    if (interactive) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onShopTap() }
+                    } else Modifier
+                ),
+            contentScale = ContentScale.FillBounds,
+            filterQuality = FilterQuality.None
+        )
+        Image(
+            bitmap = vendorIdle,
+            contentDescription = "攤主",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = maxWidth * (120f / SceneW), y = maxHeight * (48f / SceneH))
+                .size(width = maxWidth * (28f / SceneW), height = maxHeight * (36f / SceneH)),
+            contentScale = ContentScale.FillBounds,
+            filterQuality = FilterQuality.None
+        )
+        if (shopHighlight) {
+            Image(
+                painter = painterResource(R.drawable.ic_shop_pole),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = maxWidth * (128f / SceneW), y = maxHeight * (28f / SceneH))
+                    .size(maxWidth * (18f / SceneW)),
+                contentScale = ContentScale.FillBounds
+            )
         }
 
         // Pets — 萌芽起 1 隻；21 日第二欄

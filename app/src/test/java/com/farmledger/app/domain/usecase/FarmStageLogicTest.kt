@@ -64,9 +64,11 @@ class FarmStageLogicTest {
         assertThat(at14.greenerDenser).isTrue()
         assertThat(at14.smallExpansion).isTrue()
         assertThat(at14.animalSlots).isEqualTo(1)
+        assertThat(at14.decorSlots).isEqualTo(2)
 
         val at21 = FarmStageLogic.capabilities(21)
         assertThat(at21.animalSlots).isEqualTo(2)
+        assertThat(at21.decorSlots).isEqualTo(2)
     }
 
     @Test

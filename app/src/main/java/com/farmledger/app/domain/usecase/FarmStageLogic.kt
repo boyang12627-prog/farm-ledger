@@ -78,7 +78,7 @@ object FarmStageLogic {
                 unlockedPlotCount = 6,
                 petFeedSlots = 1,
                 animalSlots = if (days >= StageRules.THRIVING_ANIMAL2_DAYS) 2 else 1,
-                decorSlots = 1,
+                decorSlots = 2, // M4：旺場可多佈置 1 格（仍耗成長點、唔發獎）
                 showGrassEdges = true,
                 showHut = true,
                 showFence = true,

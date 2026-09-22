@@ -15,6 +15,7 @@
 - **單一農場主世界**：記帳／結算／商店為 overlay；成長點於場景內花費餵食／佈置（種植改耗種子）
 - **農田／背包（M2）**：種／澆／收用背包種子與收成堆疊；商店買種子＝支出、賣收成＝收入（金額唔發成長點）
 - **夜結／餵食（M3）**：夜晚結算儀式 UX（仍一日一點）；寵物餵食改耗背包飼料（商店可買＝支出），開心／進食反饋
+- **一日生活（M4）**：起床→勞作→黃昏商店買賣入帳→夜結→瞓覺過日；場景商店攤位；安家／旺場佈置耗成長點（唔發獎）
 - **農田**：階段解鎖田格（荒地 2 格→萌芽 6 格）、3 種作物種植→澆水→收成入庫（收成不發成長點）
 - **寵物**：以飼料餵食、互動、改名（開心／進食反饋）
 - **家居裝飾**：7 件佔位裝飾（暖色像素風；含小屋／樹木場景裝飾）
@@ -72,6 +73,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - `app/src/test/.../DayPhaseLogicTest.kt`
 - `app/src/test/.../InventoryLogicTest.kt`
 - `app/src/test/.../FarmInventoryLogicTest.kt`
+- `app/src/test/.../DayLoopLogicTest.kt`
 
 ## 技術棧
 

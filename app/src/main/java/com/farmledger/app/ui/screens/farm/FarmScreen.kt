@@ -70,6 +70,8 @@ import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.PlotState
 import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.domain.model.ShopCatalog
+import com.farmledger.app.domain.usecase.DayLoopFocus
+import com.farmledger.app.domain.usecase.DayLoopLogic
 import com.farmledger.app.domain.usecase.FarmLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.usecase.InventoryLogic
@@ -128,6 +130,9 @@ fun FarmScreen(
     }
     val today = LocalDate.now().toString()
     val todaySettled = progress.lastSettleDate == today
+    val dayGuide = remember(gameDay.phase, todaySettled) {
+        DayLoopLogic.guide(gameDay.phase, todaySettled)
+    }
     val panelGrass = if (caps.greenerDenser) FarmPanelGrassDense else FarmPanelGrass
     val seedTotal = remember(inventory) { InventoryLogic.totalSeeds(inventory) }
     val cropTotal = remember(inventory) { InventoryLogic.totalCrops(inventory) }
@@ -216,6 +221,46 @@ fun FarmScreen(
 
         Spacer(Modifier.height(6.dp))
 
+        // M4 一日生活指引
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = FarmBg),
+            border = BorderStroke(1.5.dp, FarmStroke),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Row(
+                Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painterResource(dayLoopIconRes(dayGuide.focus)),
+                    contentDescription = dayGuide.focus.nameZh,
+                    modifier = Modifier.size(28.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        dayGuide.titleZh,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = FarmText
+                    )
+                    Text(
+                        dayGuide.hintZh,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FarmSoil
+                    )
+                    Text(
+                        DayLoopLogic.loopLabelsZh().joinToString(" → "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = FarmSoil
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = {
@@ -234,11 +279,16 @@ fun FarmScreen(
                 Spacer(Modifier.size(4.dp))
                 Text("記帳")
             }
+            val settlePrimary = DayLoopLogic.isSettlePreferred(gameDay.phase) && !todaySettled
             Button(
                 onClick = { overlay = FarmOverlay.Settle },
                 modifier = Modifier.weight(1f).height(44.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (todaySettled) FarmBg else FarmSelected,
+                    containerColor = when {
+                        todaySettled -> FarmBg
+                        settlePrimary -> FarmSelected
+                        else -> FarmSelected.copy(alpha = 0.85f)
+                    },
                     contentColor = FarmText
                 )
             ) {
@@ -249,22 +299,47 @@ fun FarmScreen(
                     contentScale = ContentScale.FillBounds
                 )
                 Spacer(Modifier.size(4.dp))
-                Text(if (todaySettled) "今日已結算 ✓" else "每日結算 +${RewardRules.DAILY_GROWTH_POINTS}")
-            }
-            OutlinedButton(
-                onClick = { overlay = FarmOverlay.Shop },
-                modifier = Modifier.weight(1f).height(44.dp)
-            ) {
-                Image(
-                    painterResource(R.drawable.ic_buy_bag),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Spacer(Modifier.size(4.dp))
                 Text(
-                    if (gameDay.phase == DayPhase.EVENING) "黃昏商店" else "商店"
+                    when {
+                        todaySettled -> "今日已結清 ✓"
+                        settlePrimary -> "夜結 +${RewardRules.DAILY_GROWTH_POINTS}"
+                        else -> "日結 +${RewardRules.DAILY_GROWTH_POINTS}"
+                    }
                 )
+            }
+            val shopPrimary = DayLoopLogic.isShopPreferred(gameDay.phase)
+            if (shopPrimary) {
+                Button(
+                    onClick = { overlay = FarmOverlay.Shop },
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = FarmSelected,
+                        contentColor = FarmText
+                    )
+                ) {
+                    Image(
+                        painterResource(R.drawable.ic_shop_pole),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Text("黃昏商店")
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { overlay = FarmOverlay.Shop },
+                    modifier = Modifier.weight(1f).height(44.dp)
+                ) {
+                    Image(
+                        painterResource(R.drawable.ic_shop_pole),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Text("商店")
+                }
             }
         }
 
@@ -277,28 +352,33 @@ fun FarmScreen(
             ) {
                 Text(
                     when (gameDay.phase) {
-                        DayPhase.NIGHT -> "夜晚・請睡覺"
-                        else -> "等待・下一時段"
+                        DayPhase.MORNING -> "等待・入晝"
+                        DayPhase.NOON -> "等待・入昏"
+                        DayPhase.EVENING -> "等待・入夜"
+                        DayPhase.NIGHT -> "夜晚・請瞓覺"
                     }
                 )
             }
+            val sleepPrimary = DayLoopLogic.isSleepPreferred(gameDay.phase, todaySettled)
             Button(
                 onClick = { vm.sleepToNextDay() },
                 enabled = !progress.clockPaused && gameDay.phase == DayPhase.NIGHT,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (gameDay.phase == DayPhase.NIGHT) FarmSelected else FarmBg,
+                    containerColor = if (sleepPrimary) FarmSelected else FarmBg,
                     contentColor = FarmText
                 )
-            ) { Text("睡覺・下一日") }
+            ) {
+                Image(
+                    painterResource(R.drawable.ic_day_sleep),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(4.dp))
+                Text(if (sleepPrimary) "瞓覺・下一日" else "瞓覺過日")
+            }
         }
-
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "種／澆／收用背包；買種子／飼料＝支出、賣收成＝收入（唔發成長點）。夜結算一日一點。",
-            style = MaterialTheme.typography.bodySmall,
-            color = FarmSoil
-        )
 
         Spacer(Modifier.height(6.dp))
         Text("物品欄", color = FarmText, style = MaterialTheme.typography.labelLarge)
@@ -382,7 +462,7 @@ fun FarmScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
-                    interactive = caps.animalSlots > 0,
+                    interactive = true,
                     capabilities = caps,
                     placedDecorIds = decorations.filter { it.placed }.map { it.id }.toSet(),
                     dayPhase = gameDay.phase,
@@ -390,7 +470,9 @@ fun FarmScreen(
                     petFeedbackUntilMs = petFeedbackUntilMs,
                     onPetTap = {
                         if (caps.petFeedSlots > 0) vm.feedPet()
-                    }
+                    },
+                    onShopTap = { overlay = FarmOverlay.Shop },
+                    shopHighlight = DayLoopLogic.isShopPreferred(gameDay.phase)
                 )
                 Box(
                     Modifier
@@ -552,14 +634,34 @@ fun FarmScreen(
                     }
                 )
             }
+            val placedDecor = decorations.count { it.placed }
+            val decorRemain = (caps.decorSlots - placedDecor).coerceAtLeast(0)
             OutlinedButton(
                 onClick = { vm.buildDecorInScene() },
-                enabled = caps.decorSlots > 0,
+                enabled = caps.decorSlots > 0 &&
+                    decorRemain > 0 &&
+                    progress.growthPoints >= GrowthSpendCosts.BUILD_DECOR,
                 modifier = Modifier.weight(1f)
             ) {
+                Image(
+                    painterResource(
+                        when {
+                            caps.decorSlots <= 0 -> R.drawable.build_plot_empty
+                            decorRemain <= 0 -> R.drawable.decor_sign
+                            else -> R.drawable.build_blueprint
+                        }
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(4.dp))
                 Text(
-                    if (caps.decorSlots > 0) "佈置 -${GrowthSpendCosts.BUILD_DECOR}"
-                    else "佈置（安家解鎖）"
+                    when {
+                        caps.decorSlots <= 0 -> "佈置（安家解鎖）"
+                        decorRemain <= 0 -> "佈置已滿"
+                        else -> "佈置 -${GrowthSpendCosts.BUILD_DECOR}（剩$decorRemain）"
+                    }
                 )
             }
         }
@@ -653,18 +755,40 @@ private fun ShopOverlayContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painterResource(R.drawable.ic_buy_bag),
+                painterResource(R.drawable.shop_stall),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                contentScale = ContentScale.FillBounds
+            )
+            Spacer(Modifier.size(6.dp))
+            Image(
+                painterResource(R.drawable.npc_vendor_idle),
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                contentScale = ContentScale.FillBounds
+            )
+            Spacer(Modifier.size(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (phase == DayPhase.EVENING) "黃昏商店・攤位" else "農場商店・攤位",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = FarmText
+                )
+                Text(
+                    if (phase == DayPhase.EVENING) "一日節奏：買賣入帳（唔發成長點）"
+                    else "隨時可買；黃昏最合適。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FarmSoil
+                )
+            }
+            Image(
+                painterResource(R.drawable.shop_sign),
                 contentDescription = null,
                 modifier = Modifier.size(28.dp),
                 contentScale = ContentScale.FillBounds
             )
-            Spacer(Modifier.size(8.dp))
-            Text(
-                if (phase == DayPhase.EVENING) "黃昏商店" else "農場商店",
-                style = MaterialTheme.typography.headlineSmall,
-                color = FarmText
-            )
         }
+        Spacer(Modifier.height(4.dp))
         Text(
             "買種子／飼料＝支出、賣收成＝收入；金額唔發成長點。必須經背包。",
             style = MaterialTheme.typography.bodySmall,
@@ -680,6 +804,13 @@ private fun ShopOverlayContent(
             )
             Spacer(Modifier.size(6.dp))
             Text("買種子", fontWeight = FontWeight.Bold, color = FarmText)
+            Spacer(Modifier.size(8.dp))
+            Image(
+                painterResource(R.drawable.ui_price_tag),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                contentScale = ContentScale.FillBounds
+            )
         }
         CropKind.entries.forEach { crop ->
             val price = ShopCatalog.seedBuyPriceMinor(crop)
@@ -690,12 +821,20 @@ private fun ShopOverlayContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painterResource(cropSeedItemRes(crop)),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        contentScale = ContentScale.FillBounds
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painterResource(R.drawable.ui_shop_slot),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            contentScale = ContentScale.FillBounds
+                        )
+                        Image(
+                            painterResource(cropSeedItemRes(crop)),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            contentScale = ContentScale.FillBounds
+                        )
+                    }
                     Spacer(Modifier.size(6.dp))
                     Text(
                         "${FarmLogic.cropZh(crop)}種子 · ${(price / 100.0)}／袋 · 有 $have",
@@ -778,12 +917,20 @@ private fun ShopOverlayContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painterResource(cropHarvestItemRes(crop)),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        contentScale = ContentScale.FillBounds
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painterResource(R.drawable.ui_shop_slot),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            contentScale = ContentScale.FillBounds
+                        )
+                        Image(
+                            painterResource(cropHarvestItemRes(crop)),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            contentScale = ContentScale.FillBounds
+                        )
+                    }
                     Spacer(Modifier.size(6.dp))
                     Text(
                         "${FarmLogic.cropZh(crop)} · ${(price / 100.0)}／個 · 有 $have",
@@ -1041,6 +1188,14 @@ private fun SettleOverlayContent(
         TextButton(onClick = onClose) { Text("關閉") }
         Spacer(Modifier.height(24.dp))
     }
+}
+
+private fun dayLoopIconRes(focus: DayLoopFocus) = when (focus) {
+    DayLoopFocus.WAKE -> R.drawable.ic_day_wake
+    DayLoopFocus.WORK -> R.drawable.ic_day_work
+    DayLoopFocus.SHOP -> R.drawable.ic_day_shop
+    DayLoopFocus.SETTLE -> R.drawable.ic_moon_settle
+    DayLoopFocus.SLEEP -> R.drawable.ic_day_sleep
 }
 
 private fun cropSeedItemRes(kind: CropKind) = when (kind) {

@@ -210,6 +210,23 @@
 
 ---
 
+## 7e. M4 實際素材（2026-09-22 開工・商店／擴建＋全日生活節點）
+
+產品開 M4 美術＝場景商店攤＋攤主、擴建地／藍圖／小屋刷新、少量 decor、商店 UI 格、一日節奏 icon。詳見 **`docs/m4_art_assets.md`**。
+
+| 類 | 實際檔名 |
+|----|----------|
+| 商店 | `shop_stall`／`npc_vendor_idle`／`shop_sign`（＋`building_shop_pole`／`ic_shop_pole`） |
+| 擴建 | `build_plot_empty`／`building_hut`（刷新）／`build_blueprint` |
+| decor | `decor_lamp`／`decor_flowerbox`／`decor_sign`（＋`decor_lantern`／`decor_scarecrow`） |
+| UI | `ui_shop_slot`／`ui_price_tag` |
+| 日課 | `ic_day_wake`／`ic_day_work`／`ic_day_shop`／`ic_day_sleep` |
+| 接線 | `DayLoopLogic`＋`FarmScreen`／`FarmSceneLayer` 攤位熱區＋decor；佈置耗成長點唔發獎 |
+
+產生腳本：`scripts/gen_m4_art_assets.py`。**唔改**一日一結／改帳唔重派。
+
+---
+
 ## 8. 群組 5 行重點（可直接貼）
 
 1. **方向**：俯視暖色像素＋大方塊深輪廓；單一農場；晨昏夜用 tint。  

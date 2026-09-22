@@ -88,7 +88,7 @@ object DayPhaseLogic {
             state = updated,
             advanced = true,
             slept = true,
-            messageZh = "晚安！進入第 ${updated.gameDay} 日・晨（睡覺不發成長點）。"
+            messageZh = "晚安！瞓覺過日 → 第 ${updated.gameDay} 日起床（睡覺不發成長點）。"
         )
     }
 
