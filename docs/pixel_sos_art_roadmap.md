@@ -201,10 +201,10 @@
 
 | 類 | 實際檔名 |
 |----|----------|
-| 日結 | `ic_moon_settle`／`ic_settle_stamp`／`settle_banner`／`moon_rise_f0..f2` |
-| 寵物 | `pet_idle`／`pet_happy`／`pet_eat`（小芽豬升級） |
+| 日結 | `ic_moon_settle`／`ic_settle_stamp`／`fx_settle_stamp`／`settle_banner`／`moon_rise_f0..f2` |
+| 寵物 | `pet_idle`／`pet_happy`／`pet_eat`（小芽豬升級）＋`item_feed`／`fx_eat` |
 | FX | `fx_heart`（刷新）／`fx_sparkle_ready` |
-| 接線 | `FarmScreen` 結算鈕＋Settle 浮層；`PetScreen`／餵食；READY sparkle |
+| 接線 | `FarmScreen` 結算鈕＋Settle 浮層升起／蓋章；`FarmSceneLayer`／`PetScreen` 餵食；READY sparkle |
 
 產生腳本：`scripts/gen_m3_art_assets.py`。**唔改**一日一結／改帳唔重派。
 

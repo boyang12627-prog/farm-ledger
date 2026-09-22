@@ -242,6 +242,13 @@ fun FarmScreen(
                     contentColor = FarmText
                 )
             ) {
+                Image(
+                    painterResource(R.drawable.ic_moon_settle),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(Modifier.size(4.dp))
                 Text(if (todaySettled) "今日已結算 ✓" else "每日結算 +${RewardRules.DAILY_GROWTH_POINTS}")
             }
             OutlinedButton(
