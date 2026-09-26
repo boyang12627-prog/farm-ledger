@@ -46,6 +46,7 @@ import com.farmledger.app.domain.model.DefaultAccounts
 import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.LedgerAccount
 import com.farmledger.app.domain.model.LedgerCategory
+import com.farmledger.app.domain.usecase.EntryPrefillLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.screens.ledger.formatMinor
 import com.farmledger.app.ui.theme.FarmBg
@@ -88,9 +89,11 @@ fun QuickEntryScreen(
         val c = pending ?: return@LaunchedEffect
         vm.consumePendingEntryCategory()
         category = c
-        type = when (c) {
-            LedgerCategory.INCOME, LedgerCategory.SAVINGS -> EntryType.INCOME
-            else -> EntryType.EXPENSE
+        type = EntryPrefillLogic.entryTypeForCategory(c)
+        if (c == LedgerCategory.SAVINGS) {
+            // 撲滿：現金 → 儲蓄戶轉帳（唔當收入）
+            accountId = DefaultAccounts.CASH_ID
+            transferToId = DefaultAccounts.SAVINGS_ID
         }
     }
 
@@ -154,13 +157,16 @@ fun QuickEntryScreen(
                                 .clickable {
                                     type = t
                                     if (t == EntryType.INCOME && category !in listOf(
-                                            LedgerCategory.INCOME, LedgerCategory.SAVINGS, LedgerCategory.OTHER
+                                            LedgerCategory.INCOME, LedgerCategory.OTHER
                                         )
                                     ) {
                                         category = LedgerCategory.INCOME
                                     }
                                     if (t == EntryType.EXPENSE && category == LedgerCategory.INCOME) {
                                         category = LedgerCategory.FOOD
+                                    }
+                                    if (t == EntryType.TRANSFER && transferToId == null) {
+                                        transferToId = DefaultAccounts.SAVINGS_ID
                                     }
                                 },
                             contentAlignment = Alignment.Center
@@ -202,7 +208,7 @@ fun QuickEntryScreen(
                     Spacer(Modifier.height(6.dp))
                     // 3. 分類格
                     val chips = if (type == EntryType.INCOME) {
-                        listOf(LedgerCategory.INCOME, LedgerCategory.SAVINGS, LedgerCategory.OTHER)
+                        listOf(LedgerCategory.INCOME, LedgerCategory.OTHER)
                     } else {
                         LedgerCategory.expenseChips
                     }

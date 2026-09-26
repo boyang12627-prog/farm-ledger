@@ -39,7 +39,9 @@ data class LedgerAccount(
 
 object DefaultAccounts {
     const val CASH_ID = "cash"
+    const val SAVINGS_ID = "savings"
     val CASH = LedgerAccount(id = CASH_ID, nameZh = "現金")
+    val SAVINGS = LedgerAccount(id = SAVINGS_ID, nameZh = "儲蓄")
 }
 
 @Serializable

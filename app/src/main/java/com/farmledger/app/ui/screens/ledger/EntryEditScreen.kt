@@ -140,7 +140,7 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             Text("分類・${category.farmObjectZh}", color = FarmText, style = MaterialTheme.typography.labelLarge)
             Row {
                 val cats = if (type == EntryType.INCOME) {
-                    listOf(LedgerCategory.INCOME, LedgerCategory.SAVINGS, LedgerCategory.OTHER)
+                    listOf(LedgerCategory.INCOME, LedgerCategory.OTHER)
                 } else {
                     LedgerCategory.expenseChips
                 }

@@ -92,6 +92,12 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     """
+                    INSERT OR IGNORE INTO ledger_accounts (id, nameZh, archived)
+                    VALUES ('savings', '儲蓄', 0)
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS ledger_entries_new (
                         id TEXT NOT NULL PRIMARY KEY,
                         localDate TEXT NOT NULL,

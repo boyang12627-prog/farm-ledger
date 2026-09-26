@@ -90,6 +90,14 @@ class FarmLedgerRepository(
                 archived = false
             )
         )
+        // 儲蓄戶：撲滿熱區轉帳預設對方帳戶
+        accountDao.insertIgnore(
+            LedgerAccountEntity(
+                id = DefaultAccounts.SAVINGS_ID,
+                nameZh = DefaultAccounts.SAVINGS.nameZh,
+                archived = false
+            )
+        )
     }
 
     /** 新增帳戶（免費、唔限數量）；id 自動產生。 */
