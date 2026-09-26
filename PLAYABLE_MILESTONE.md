@@ -6,7 +6,7 @@
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA | （見 git log／本檔更新後填） |
+| Commit SHA | `1e29902aa4c0ab5c6d61097bc4aa8ef51f23b1d5`（短：`1e29902`） |
 | 說明 | M5：真港幣記帳核——拆混帳、四 Tab、入帳／帳簿／日記殼、category／account migration |
 | 前身 M4 | `7f91786`／gate `c5432a7` |
 | 分支 | `main` |
@@ -38,6 +38,6 @@
 
 ## 基準提交記錄
 
-- M5 真港幣記帳核：（commit 後填）
+- M5 真港幣記帳核：`1e29902`（2026-09-26）
 - M4 day-loop + shop stall：`7f91786`（2026-09-22）
 - M3 night-settle + inventory feed：`6f0a859`（2026-09-22）
