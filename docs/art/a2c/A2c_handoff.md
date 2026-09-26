@@ -36,3 +36,13 @@
 | other | other_notice |
 
 預覽：`previews/a2c_assembled_ranch.jpg`、`a2c_kit_preview.jpg`。
+
+---
+
+## 橫屏＋Label（用戶 2026-09-26）
+
+**必讀：** [`A2c_landscape_label_spec.md`](./A2c_landscape_label_spec.md)
+
+- 主牧場 **landscape 16:9**
+- 熱區 **唔掛常駐中文木牌**；字少／長按 `sheets/whisper_label.png`
+- `floating_wood_sign` 唔再做九熱區常駐牌

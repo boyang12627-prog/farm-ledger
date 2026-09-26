@@ -231,12 +231,29 @@
     "sheets/ledger_paper.png",
     "sheets/diary_paper.png",
     "sheets/empty_state_illustration.png",
-    "sheets/floating_wood_sign.png"
+    "sheets/floating_wood_sign.png",
+    "sheets/whisper_label.png"
   ],
   "overlays": [
     "overlays/grass_layer_1.png",
     "overlays/grass_layer_2.png",
     "overlays/grass_layer_3.png",
     "overlays/stamp_sprout.png"
-  ]
+  ],
+  "orientation": {
+    "ranch": "landscape",
+    "aspect": "16:9",
+    "base_px": {
+      "w": 1280,
+      "h": 720
+    }
+  },
+  "label_policy": {
+    "default": "none",
+    "optional": "long_press_whisper",
+    "whisper_asset": "sheets/whisper_label.png",
+    "forbid_always_on_wood_nameplates": true,
+    "floating_wood_sign_usage": "toast_or_empty_state_only",
+    "spec": "A2c_landscape_label_spec.md"
+  }
 }

@@ -101,3 +101,9 @@ ModalBottomSheet / Dialog {
 ## 授權
 
 本包為專案自繪／生成美術，作「牧場手帳」免費 App 商用。無第三方付費素材、無官方 IP。
+
+---
+
+## 橫屏＋SoS label（補）
+
+見 **`A2c_landscape_label_spec.md`**。主牧場橫屏；熱區默認無大中文木牌，長按先出細 tip（`sheets/whisper_label.png`）。
