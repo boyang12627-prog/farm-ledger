@@ -11,9 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FarmLedger">
+        <!-- A2c_landscape_label_spec: 主牧場強制橫屏 16:9；入帳等可用 Sheet overlay -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:theme="@style/Theme.FarmLedger"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

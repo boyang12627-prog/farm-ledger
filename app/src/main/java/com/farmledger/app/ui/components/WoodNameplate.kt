@@ -22,7 +22,8 @@ private val Cream = Color(0xFFF5E6C8)
 private val Ink = Color(0xFF3D2A1A)
 
 /**
- * 木名牌：分類名＋最近一筆摘要；浮喺熱區上方，唔搶底欄。
+ * 木名牌：系統 toast／空態說明／設定頁用。
+ * **唔**用於九熱區常駐（見 A2c_landscape_label_spec §3；熱區用 WhisperLabel）。
  */
 @Composable
 fun WoodNameplate(

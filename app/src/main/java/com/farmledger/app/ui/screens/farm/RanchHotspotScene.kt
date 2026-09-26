@@ -4,21 +4,14 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,9 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -41,28 +32,27 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.HotspotInteractionLogic
 import com.farmledger.app.domain.usecase.HotspotVisualState
+import com.farmledger.app.ui.components.WhisperLabel
 import kotlinx.coroutines.delay
 
-/** A2c／A2b 底圖邏輯尺寸（hotspot_map.json 1280×720） */
+/** A2c／A2b 底圖邏輯尺寸（hotspot_map.json 1280×720＝16:9 landscape） */
 private const val RanchW = 1280f
 private const val RanchH = 720f
 private const val SpriteScale = 0.14f
-private val LabelInk = Color(0xFF3D2A1A)
+/** A2c_landscape_label_spec §3 模式 B：長按 ≥400ms 先出 whisper */
+private const val WhisperLongPressMs = 400L
 
 /**
- * A2c 可組裝牧場：`spring_ranch_base`＋九熱區三態 drawable（idle／pressed／active）
- * ＋ grass_layer_1..3 堆疊＋ floating_wood_sign 浮標。
- * 禁用＝灰階 alpha；今日有記＝active 圖（唔取代可點／禁用）。
+ * A2c 可組裝牧場（橫屏）：`spring_ranch_base`＋九熱區三態 drawable
+ * ＋ grass_layer 堆疊。默認**無常駐木牌**；長按出 whisper tip（同時最多 1）。
+ * 大木牌浮標唔再掛熱區（見 A2c_landscape_label_spec）。
  */
 @Composable
 fun RanchHotspotScene(
@@ -71,23 +61,15 @@ fun RanchHotspotScene(
     weedStacks: Map<LedgerCategory, Int> = emptyMap(),
     loggedToday: Set<LedgerCategory> = emptySet(),
     activeAccountCount: Int = 2,
-    latestSummaries: Map<LedgerCategory, String?> = emptyMap(),
     onHotspotTap: (LedgerCategory) -> Unit = {},
     showOverlayHint: Boolean = false,
+    /** 無障礙／首次教學：常駐細 whisper（默認 off＝模式 A） */
+    showHotspotLabels: Boolean = false,
 ) {
-    var nameplateCat by remember { mutableStateOf<LedgerCategory?>(null) }
+    // 同時最多 1 個 tip
+    var whisperCat by remember { mutableStateOf<LedgerCategory?>(null) }
 
-    LaunchedEffect(nameplateCat) {
-        if (nameplateCat != null) {
-            delay(1400)
-            nameplateCat = null
-        }
-    }
-
-    BoxWithConstraints(
-        // fill parent (portrait full-bleed); hotspot math uses actual box WxH
-        modifier.fillMaxSize()
-    ) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val boxW = maxWidth
         val scaleX = with(density) { boxW.toPx() / RanchW }
@@ -111,7 +93,7 @@ fun RanchHotspotScene(
             )
         }
 
-        // 浮標＋草（喺精靈之下，唔搶點擊）
+        // 漏記草（唔附大字）
         RanchHotspots.forEach { spot ->
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
@@ -141,36 +123,6 @@ fun RanchHotspotScene(
                     )
                 }
             }
-
-            // A2c 木牌浮標
-            val label = HotspotInteractionLogic.floatingLabel(spot.category)
-            val signW = with(density) { 72.dp.toPx() }
-            val signH = with(density) { 28.dp.toPx() }
-            Box(
-                Modifier
-                    .offset {
-                        IntOffset(
-                            (cxPx - signW / 2f).toInt(),
-                            (cyPx - halfPx - signH - 4f).toInt()
-                        )
-                    }
-                    .size(width = 72.dp, height = 28.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.floating_wood_sign),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(
-                    label,
-                    color = LabelInk,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-            }
         }
 
         RanchHotspots.forEach { spot ->
@@ -184,62 +136,48 @@ fun RanchHotspotScene(
                 spriteDp = spriteDp,
                 activeAccountCount = activeAccountCount,
                 loggedToday = spot.category in loggedToday,
-                onTap = {
-                    nameplateCat = spot.category
-                    onHotspotTap(spot.category)
+                onTap = { onHotspotTap(spot.category) },
+                onWhisperChange = { show ->
+                    whisperCat = if (show) spot.category else {
+                        if (whisperCat == spot.category) null else whisperCat
+                    }
                 }
             )
         }
 
-        // 點擊後名牌（木牌＋摘要）
-        nameplateCat?.let { cat ->
-            val spot = RanchHotspots.find { it.category == cat } ?: return@let
-            val cxPx = spot.fx * RanchW * scaleX
-            val cyPx = spot.fy * RanchH * scaleY
-            Box(
-                Modifier
-                    .align(Alignment.TopStart)
-                    .offset {
+        // 模式 B：長按 whisper（同時最多 1）；showHotspotLabels＝無障礙常駐細 tip
+        if (showHotspotLabels && whisperCat == null) {
+            RanchHotspots.forEach { spot ->
+                val cxPx = spot.fx * RanchW * scaleX
+                val cyPx = spot.fy * RanchH * scaleY
+                val tipW = with(density) { 56.dp.toPx() }
+                val tipH = with(density) { 26.dp.toPx() }
+                WhisperLabel(
+                    text = HotspotInteractionLogic.whisperShortName(spot.category),
+                    modifier = Modifier.offset {
                         IntOffset(
-                            (cxPx - with(density) { 70.dp.toPx() }).toInt().coerceAtLeast(4),
-                            (cyPx - halfPx - with(density) { 64.dp.toPx() }).toInt().coerceAtLeast(4)
+                            (cxPx - tipW / 2f).toInt(),
+                            (cyPx - halfPx - tipH - 2f).toInt().coerceAtLeast(2)
                         )
                     }
-                    .widthIn(min = 120.dp, max = 160.dp)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.floating_wood_sign),
-                    contentDescription = null,
-                    modifier = Modifier.matchParentSize().alpha(0.95f),
-                    contentScale = ContentScale.FillBounds
                 )
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFF5E6C8).copy(alpha = 0.88f))
-                        .border(1.5.dp, Color(0xFF6B4A2E), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                ) {
-                    androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            HotspotInteractionLogic.nameplateTitle(cat),
-                            color = LabelInk,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
+            }
+        } else {
+            whisperCat?.let { cat ->
+                val spot = RanchHotspots.find { it.category == cat } ?: return@let
+                val cxPx = spot.fx * RanchW * scaleX
+                val cyPx = spot.fy * RanchH * scaleY
+                val tipW = with(density) { 56.dp.toPx() }
+                val tipH = with(density) { 26.dp.toPx() }
+                WhisperLabel(
+                    text = HotspotInteractionLogic.whisperShortName(cat),
+                    modifier = Modifier.offset {
+                        IntOffset(
+                            (cxPx - tipW / 2f).toInt(),
+                            (cyPx - halfPx - tipH - 2f).toInt().coerceAtLeast(2)
                         )
-                        latestSummaries[cat]?.let { sub ->
-                            Text(
-                                sub,
-                                color = LabelInk.copy(alpha = 0.75f),
-                                fontSize = 10.sp,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1
-                            )
-                        }
                     }
-                }
+                )
             }
         }
     }
@@ -254,7 +192,8 @@ private fun HotspotObjectLayer(
     spriteDp: Dp,
     activeAccountCount: Int,
     loggedToday: Boolean,
-    onTap: () -> Unit
+    onTap: () -> Unit,
+    onWhisperChange: (Boolean) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
@@ -273,7 +212,17 @@ private fun HotspotObjectLayer(
     )
     val greyMatrix = remember { ColorMatrix().apply { setToSaturation(0.2f) } }
 
-    // drawable 三態：pressed > active(hasEntry) > idle；禁用仍顯示 idle＋灰
+    // 長按 ≥400ms → whisper；鬆開即消（同時最多 1 由父層）
+    LaunchedEffect(pressed, enabled) {
+        if (pressed && enabled) {
+            delay(WhisperLongPressMs)
+            onWhisperChange(true)
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        } else {
+            onWhisperChange(false)
+        }
+    }
+
     val drawable = when {
         state == HotspotVisualState.PRESSED -> hotspotDrawable(spot.category, HotspotArtState.PRESSED)
         loggedToday && enabled -> hotspotDrawable(spot.category, HotspotArtState.ACTIVE)

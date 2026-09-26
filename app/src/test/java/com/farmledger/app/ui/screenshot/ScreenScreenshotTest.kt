@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
+import com.android.resources.ScreenOrientation
 import com.farmledger.app.R
 import com.farmledger.app.ui.screens.farm.FarmSceneLayer
 import com.farmledger.app.ui.screens.farm.RanchHotspotScene
@@ -109,6 +110,21 @@ class ScreenScreenshotTest {
     fun ranchA2c() {
         paparazzi.snapshot(name = "05_ranch_a2c") {
             FarmLedgerTheme { RanchA2cFixture() }
+        }
+    }
+
+    @Test
+    fun ranchLandscape() {
+        paparazzi.unsafeUpdateConfig(
+            deviceConfig = DeviceConfig.PIXEL_5.copy(
+                softButtons = false,
+                screenWidth = 1280,
+                screenHeight = 720,
+                orientation = ScreenOrientation.LANDSCAPE
+            )
+        )
+        paparazzi.snapshot(name = "05b_ranch_landscape") {
+            FarmLedgerTheme { RanchLandscapeFixture() }
         }
     }
 
@@ -649,35 +665,59 @@ private fun FarmFixture() {
 
 @Composable
 private fun RanchA2cFixture() {
-    // Default ranch path UI tree only — no 起床／物品欄／選擇作物／等待入晝
+    // Default ranch path — floating chips, no HKD HUD, no permanent hotspot labels
     Column(
         Modifier
             .fillMaxSize()
             .background(Color(0xFFB8D4A8))
-            .padding(4.dp)
     ) {
         RanchTopBar(
             seasonLine = "春・第 3 日",
             weatherOrPhase = "晝・萌芽",
             streakDays = 3,
             seedCoins = 12,
-            hkdMonthSummary = "HK$128.50"
+            onOpenSettings = {}
         )
         RanchHotspotScene(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             missedCategories = emptySet(),
             weedStacks = emptyMap(),
             loggedToday = emptySet(),
             activeAccountCount = 2,
-            latestSummaries = emptyMap(),
             onHotspotTap = {}
         )
-        Row(Modifier.fillMaxWidth()) {
-            TextButton(onClick = {}) { Text("週回顧") }
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = {}) { Text("設定") }
-        }
+    }
+}
+
+@Composable
+private fun RanchLandscapeFixture() {
+    // Proves landscape idle: objects only, no floating_wood_sign row, no HKD on HUD
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFB8D4A8))
+    ) {
+        RanchTopBar(
+            seasonLine = "春・第 3 日",
+            weatherOrPhase = "晝・萌芽",
+            streakDays = 3,
+            seedCoins = 12,
+            onOpenSettings = {}
+        )
+        RanchHotspotScene(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            missedCategories = emptySet(),
+            weedStacks = emptyMap(),
+            loggedToday = emptySet(),
+            activeAccountCount = 2,
+            showHotspotLabels = false,
+            onHotspotTap = {}
+        )
     }
 }

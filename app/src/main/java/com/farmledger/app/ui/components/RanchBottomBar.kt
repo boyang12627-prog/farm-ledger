@@ -47,7 +47,8 @@ private fun tabDrawable(tab: RanchTab, selected: Boolean): Int = when (tab) {
 }
 
 /**
- * A2c 底欄：四格木鈕 selected／unselected 真圖＋中央＋預留。
+ * A2c 底欄：矮木條＋四 Tab（橫屏高度約 56–64dp，唔遮熱區中下帶）。
+ * 見 A2c_landscape_label_spec §1／§4。
  */
 @Composable
 fun RanchBottomBar(
@@ -61,10 +62,11 @@ fun RanchBottomBar(
             .fillMaxWidth()
             .background(Cream)
             .border(1.5.dp, Wood)
-            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
         Row(
-            Modifier.fillMaxWidth().height(56.dp),
+            Modifier.fillMaxWidth().height(56.dp),  // landscape strip 56–64dp
+
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -96,8 +98,8 @@ private fun TabImg(tab: RanchTab, selected: Boolean, onClick: () -> Unit) {
         painter = painterResource(tabDrawable(tab, selected)),
         contentDescription = tab.label,
         modifier = Modifier
-            .width(68.dp)
-            .height(52.dp)
+            .width(64.dp)
+            .height(48.dp)
             .clickable(onClick = onClick),
         contentScale = ContentScale.Fit
     )

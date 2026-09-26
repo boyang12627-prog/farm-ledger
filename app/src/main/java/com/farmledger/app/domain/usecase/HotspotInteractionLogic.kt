@@ -44,11 +44,15 @@ object HotspotInteractionLogic {
         else -> HotspotVisualState.IDLE
     }
 
-    /** 浮標短 label：撲滿顯示「轉帳」，其餘分類名 */
+    /** 浮標短 label（非熱區常駐；扑满可顯示「轉帳」） */
     fun floatingLabel(category: LedgerCategory): String =
         if (category == LedgerCategory.SAVINGS) "轉帳" else category.nameZh
 
-    /** 木名牌主行：分類名＋牧場物件 */
+    /** Whisper tip ≤4 字：只分類短名（A2c_landscape_label_spec §3） */
+    fun whisperShortName(category: LedgerCategory): String =
+        category.nameZh.take(4)
+
+    /** 木名牌主行（系統 toast／空態；唔用於九熱區常駐） */
     fun nameplateTitle(category: LedgerCategory): String =
         "${category.nameZh}・${category.farmObjectZh}"
 

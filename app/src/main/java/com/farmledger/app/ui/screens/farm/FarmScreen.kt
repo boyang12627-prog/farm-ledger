@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,15 +25,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
-import com.farmledger.app.domain.model.EntryStatus
-import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.FarmStageLogic
-import com.farmledger.app.domain.usecase.HotspotInteractionLogic
 import com.farmledger.app.domain.usecase.MissedCategoryLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.components.RanchTopBar
-import com.farmledger.app.ui.screens.ledger.formatMinor
 import com.farmledger.app.ui.theme.FarmText
 import java.time.LocalDate
 import kotlinx.coroutines.delay
@@ -42,13 +37,14 @@ import kotlinx.coroutines.delay
 private val SoftRanchSky = Color(0xFFB8D4A8)
 
 /**
- * 預設牧場主畫面＝全屏 A2c 組裝（頂欄＋熱區底圖）。
- * 舊一日循環種田殼已搬去 [LegacyFarmDayLoopScreen]，僅經設定「牧場進階／舊農場」進入。
+ * 預設牧場主畫面＝全屏 A2c 橫屏組裝（浮空頂欄 chip＋熱區底圖）。
+ * Weekly review lives on Diary tab；設定 → 頂欄齒輪。
+ * 舊一日循環種田殼已搬去 [LegacyFarmDayLoopScreen]。
+ * 見 docs/art/a2c/A2c_landscape_label_spec.md
  */
 @Composable
 fun FarmScreen(
     vm: AppViewModel,
-    onOpenWeekly: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenEntry: (LedgerCategory?) -> Unit = {}
 ) {
@@ -60,15 +56,6 @@ fun FarmScreen(
 
     val caps = remember(progress.totalSettleDays) {
         FarmStageLogic.capabilities(progress.totalSettleDays)
-    }
-    val hkdBalanceMinor = remember(allEntries) {
-        allEntries.filter { it.status == EntryStatus.ACTIVE }.fold(0L) { acc, e ->
-            when (e.type) {
-                EntryType.INCOME -> acc + e.amountMinor
-                EntryType.EXPENSE -> acc - e.amountMinor
-                else -> acc
-            }
-        }
     }
     val today = LocalDate.now().toString()
     val missed = remember(allEntries, today) {
@@ -83,11 +70,6 @@ fun FarmScreen(
     val activeAccountCount = remember(accounts) {
         accounts.count { !it.archived }
     }
-    val latestSummaries = remember(allEntries) {
-        LedgerCategory.entries.associateWith { cat ->
-            HotspotInteractionLogic.latestEntrySummary(allEntries, cat)
-        }
-    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -101,7 +83,6 @@ fun FarmScreen(
             .fillMaxSize()
             .background(SoftRanchSky)
     ) {
-        // Soft full-bleed ranch tint behind top bar (optional; scene fills rest)
         Image(
             painter = painterResource(R.drawable.spring_ranch_base),
             contentDescription = null,
@@ -109,17 +90,13 @@ fun FarmScreen(
             contentScale = ContentScale.Crop
         )
 
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 4.dp)
-        ) {
+        Column(Modifier.fillMaxSize()) {
             RanchTopBar(
                 seasonLine = "春・第 ${gameDay.gameDay} 日",
                 weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,
                 streakDays = progress.streakDays,
                 seedCoins = progress.seedCoins,
-                hkdMonthSummary = "HK$${formatMinor(hkdBalanceMinor)}"
+                onOpenSettings = onOpenSettings
             )
 
             if (progress.clockPaused) {
@@ -127,7 +104,7 @@ fun FarmScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("⚠️ 時間倒退，獎勵暫停。", Modifier.weight(1f), color = FarmText)
@@ -138,35 +115,23 @@ fun FarmScreen(
             RanchHotspotScene(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 missedCategories = missed,
                 weedStacks = weedStacks,
                 loggedToday = loggedToday,
                 activeAccountCount = activeAccountCount,
-                latestSummaries = latestSummaries,
                 onHotspotTap = { cat ->
                     vm.prefillEntryCategory(cat)
                     onOpenEntry(cat)
                 }
             )
 
-            // Discreet overflow: weekly + settings (NOT day-loop chrome)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onOpenWeekly) { Text("週回顧") }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onOpenSettings) { Text("設定") }
-            }
-
             message?.let {
                 Text(
                     it,
                     color = FarmText,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                 )
                 TextButton(onClick = { vm.consumeMessage() }) { Text("清除") }
             }

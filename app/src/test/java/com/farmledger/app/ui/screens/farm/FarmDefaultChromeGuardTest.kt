@@ -6,9 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Guards the 0.5.4-fix contract: default FarmScreen must NOT compose the old
- * day-loop chrome (起床橫幅／物品欄／選擇作物／等待入晝／瞓覺). That UI lives only in
- * [LegacyFarmDayLoopScreen].
+ * Guards 0.5.4b-land: default FarmScreen = landscape A2c, no day-loop chrome,
+ * no permanent hotspot wood signs (A2c_landscape_label_spec).
  */
 class FarmDefaultChromeGuardTest {
 
@@ -52,6 +51,21 @@ class FarmDefaultChromeGuardTest {
         assertTrue(text.contains("RanchTopBar"))
         assertTrue(text.contains("RanchHotspotScene"))
         assertTrue(text.contains("LegacyFarmDayLoopScreen") || text.contains("舊一日循環"))
+        // 週回顧／設定 row removed from farm chrome
+        assertFalse("FarmScreen must not host 週回顧 button row", text.contains("週回顧"))
+        assertFalse("FarmScreen must not pass HKD to top bar", text.contains("hkdMonthSummary") || text.contains("HK$"))
+    }
+
+    @Test
+    fun ranchHotspotScene_noPermanentWoodSigns() {
+        val text = src("RanchHotspotScene.kt").readText(Charsets.UTF_8)
+        assertFalse(
+            "RanchHotspotScene must not use floating_wood_sign drawable (spec §3)",
+            text.contains("R.drawable.floating_wood_sign") || text.contains("floating_wood_sign")
+        )
+        assertTrue(text.contains("WhisperLabel") || text.contains("whisper"))
+        assertTrue(text.contains("WhisperLongPressMs") || text.contains("400"))
+        assertTrue(text.contains("showHotspotLabels"))
     }
 
     @Test

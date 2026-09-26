@@ -61,4 +61,13 @@ class HotspotInteractionLogicTest {
         assertThat(s).contains("HK$25.50")
         assertThat(s).contains("茶餐廳")
     }
+
+    @Test
+    fun whisperShortName_isAtMostFourChars() {
+        for (c in LedgerCategory.entries) {
+            val s = HotspotInteractionLogic.whisperShortName(c)
+            assertThat(s.length).isAtMost(4)
+            assertThat(s).isEqualTo(c.nameZh.take(4))
+        }
+    }
 }

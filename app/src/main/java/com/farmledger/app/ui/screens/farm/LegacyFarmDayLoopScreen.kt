@@ -176,7 +176,7 @@ fun LegacyFarmDayLoopScreen(
             weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,
             streakDays = progress.streakDays,
             seedCoins = progress.seedCoins,
-            hkdMonthSummary = "HK$${formatMinor(hkdBalanceMinor)}"
+            onOpenSettings = onOpenSettings
         )
 
         if (progress.clockPaused) {
@@ -440,11 +440,6 @@ fun LegacyFarmDayLoopScreen(
                 val activeAccountCount = remember(accounts) {
                     accounts.count { !it.archived }
                 }
-                val latestSummaries = remember(allEntries) {
-                    LedgerCategory.entries.associateWith { cat ->
-                        HotspotInteractionLogic.latestEntrySummary(allEntries, cat)
-                    }
-                }
                 RanchHotspotScene(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -453,7 +448,6 @@ fun LegacyFarmDayLoopScreen(
                     weedStacks = weedStacks,
                     loggedToday = loggedToday,
                     activeAccountCount = activeAccountCount,
-                    latestSummaries = latestSummaries,
                     onHotspotTap = { cat ->
                         vm.prefillEntryCategory(cat)
                         onOpenEntry(cat)

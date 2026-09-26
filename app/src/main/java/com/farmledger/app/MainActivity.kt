@@ -5,10 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -40,6 +42,7 @@ import com.farmledger.app.ui.theme.FarmLedgerTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Edge-to-edge + shortEdges cutout (values-v28); Compose WindowInsets pad chrome
         enableEdgeToEdge()
         val app = application as FarmLedgerApp
         setContent {
@@ -83,9 +86,13 @@ fun FarmLedgerNav(vm: AppViewModel) {
         else -> RanchTab.RANCH
     }
 
+    // Landscape: left/right cutout + systemBars matter (safeDrawing)
+    val chromeInsets = WindowInsets.safeDrawing
+    val bottomInsets = WindowInsets.navigationBars.union(WindowInsets.displayCutout)
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets.statusBars,
+        contentWindowInsets = chromeInsets,
         bottomBar = {
             if (showBottom) {
                 RanchBottomBar(
@@ -99,7 +106,7 @@ fun FarmLedgerNav(vm: AppViewModel) {
                         }
                     },
                     onCenterFab = { goTab(Routes.ENTRY) },
-                    modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    modifier = Modifier.windowInsetsPadding(bottomInsets)
                 )
             }
         }
@@ -118,7 +125,6 @@ fun FarmLedgerNav(vm: AppViewModel) {
             composable(Routes.FARM) {
                 FarmScreen(
                     vm = vm,
-                    onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                     onOpenEntry = { cat: LedgerCategory? ->
                         if (cat != null) vm.prefillEntryCategory(cat)
