@@ -46,3 +46,10 @@
 - 主牧場 **landscape 16:9**
 - 熱區 **唔掛常駐中文木牌**；字少／長按 `sheets/whisper_label.png`
 - `floating_wood_sign` 唔再做九熱區常駐牌
+
+
+---
+
+## 第1日疏場
+
+見 `unlock/DAY1_SPARSE.md` ＋ `unlock/day1_sparse.json` ＋ `previews/a2c_day1_sparse_ranch.jpg`。

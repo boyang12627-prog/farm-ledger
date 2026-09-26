@@ -1,0 +1,87 @@
+{
+  "version": "A2c-day1-sparse",
+  "orientation": "landscape",
+  "base": "ranch/spring_ranch_base.png",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "rule": "未解鎖物件唔出現（唔用灰態大木牌）；只留空地／淡草",
+  "day1_visible": [
+    {
+      "id": "home",
+      "sprite": "housing_porch",
+      "object": "門廊"
+    },
+    {
+      "id": "food",
+      "sprite": "food_table",
+      "object": "餐桌灶"
+    },
+    {
+      "id": "income",
+      "sprite": "income_mail_basket",
+      "object": "郵箱收成籃"
+    }
+  ],
+  "unlock_schedule": [
+    {
+      "day": 1,
+      "add": [
+        "home",
+        "food",
+        "income"
+      ],
+      "note": "起步三件"
+    },
+    {
+      "day": 3,
+      "add": [
+        "daily"
+      ],
+      "note": "木箱"
+    },
+    {
+      "day": 5,
+      "add": [
+        "transit"
+      ],
+      "note": "單車"
+    },
+    {
+      "day": 7,
+      "add": [
+        "save"
+      ],
+      "note": "撲滿"
+    },
+    {
+      "day": 10,
+      "add": [
+        "fun"
+      ],
+      "note": "花圃魚塘"
+    },
+    {
+      "day": 12,
+      "add": [
+        "health"
+      ],
+      "note": "藥草"
+    },
+    {
+      "day": 14,
+      "add": [
+        "other"
+      ],
+      "note": "告示牌"
+    }
+  ],
+  "coords": "hotspot_map.json",
+  "previews": [
+    "previews/a2c_day1_sparse_ranch.png",
+    "previews/a2c_day1_sparse_ranch.jpg",
+    "previews/a2c_day1_sparse_annotated.jpg"
+  ],
+  "label_policy": "A2c_landscape_label_spec.md — 默認無字"
+}
