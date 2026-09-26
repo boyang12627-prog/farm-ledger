@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.LedgerCategory
+import com.farmledger.app.domain.usecase.MissedCategoryLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.theme.FarmSoil
 import com.farmledger.app.ui.theme.FarmText
@@ -43,13 +44,9 @@ fun DiaryScreen(
     }
     val hasRecorded = todayActive.isNotEmpty()
     val settled = progress.lastSettleDate == today
-    val usedCats = remember(todayActive) {
-        todayActive.mapNotNull { LedgerCategory.fromStorage(it.category) }.toSet()
-    }
-    // 漏記：常用支出分類今日未出現 → 對應物件「長草」標記（佔位）
-    val missed = remember(usedCats, hasRecorded) {
-        if (!hasRecorded) LedgerCategory.expenseChips
-        else LedgerCategory.expenseChips.filter { it !in usedCats }
+    // 漏記：常用支出分類今日未出現 → 對應物件「長草」標記
+    val missed = remember(allEntries, today) {
+        MissedCategoryLogic.missedExpenseChips(allEntries, today)
     }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {

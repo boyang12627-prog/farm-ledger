@@ -92,6 +92,28 @@ class FarmLedgerRepository(
         )
     }
 
+    /** 新增帳戶（免費、唔限數量）；id 自動產生。 */
+    suspend fun addAccount(nameZh: String): LedgerAccount {
+        ensureDefaultAccount()
+        val name = nameZh.trim().ifBlank { "帳戶" }
+        val id = "acc_" + UUID.randomUUID().toString().replace("-", "").take(12)
+        val entity = LedgerAccountEntity(id = id, nameZh = name, archived = false)
+        accountDao.upsert(entity)
+        return entity.toDomain()
+    }
+
+    /** 改名（含預設現金）；唔刪除以保流水可查。 */
+    suspend fun renameAccount(id: String, nameZh: String): Boolean {
+        val existing = accountDao.getById(id) ?: return false
+        val name = nameZh.trim().ifBlank { existing.nameZh }
+        accountDao.upsert(existing.copy(nameZh = name))
+        return true
+    }
+
+    suspend fun accountName(id: String): String =
+        accountDao.getById(id)?.nameZh
+            ?: if (id == DefaultAccounts.CASH_ID) DefaultAccounts.CASH.nameZh else id
+
     suspend fun syncClock(today: String = LocalDate.now().toString()) {
         val p = prefs.progressFlow.first()
         var updated = DailySettlementLogic.detectClockRegression(p, today)
@@ -230,15 +252,27 @@ class FarmLedgerRepository(
             type == EntryType.INCOME -> LedgerCategory.INCOME.name
             else -> LedgerCategory.OTHER.name
         }
+        val fromId = accountId.ifBlank { DefaultAccounts.CASH_ID }
+        val toId = transferAccountId?.takeIf { it.isNotBlank() }
+        val transferTo = when {
+            type != EntryType.TRANSFER -> null
+            toId == null || toId == fromId -> null
+            else -> toId
+        }
+        // TRANSFER 必須有不同對方帳戶；否則降級唔寫（呼叫端應攔截）
+        if (type == EntryType.TRANSFER && transferTo == null) {
+            error("轉帳需要不同嘅由／到帳戶")
+        }
+        val entryCat = if (type == EntryType.TRANSFER) null else cat
         val entry = LedgerEntry(
             id = UUID.randomUUID().toString(),
             localDate = localDate,
             type = type,
             amountMinor = amt,
             note = note,
-            category = cat,
-            accountId = accountId.ifBlank { DefaultAccounts.CASH_ID },
-            transferAccountId = if (type == EntryType.TRANSFER) transferAccountId else null,
+            category = entryCat,
+            accountId = fromId,
+            transferAccountId = transferTo,
             status = EntryStatus.ACTIVE,
             createdAtEpochMs = now,
             updatedAtEpochMs = now

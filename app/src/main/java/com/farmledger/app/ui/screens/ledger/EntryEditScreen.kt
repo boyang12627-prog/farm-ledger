@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,14 +33,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
+import com.farmledger.app.domain.model.DefaultAccounts
 import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.ui.AppViewModel
+import com.farmledger.app.ui.screens.entry.AccountPillRow
 import com.farmledger.app.ui.theme.FarmText
 
 @Composable
 fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
     val existing = entryId?.let { vm.entryById(it) }
+    val accounts by vm.accounts.collectAsState()
     val isEdit = existing != null
     var type by remember(entryId) { mutableStateOf(existing?.type ?: EntryType.EXPENSE) }
     var amountText by remember(entryId) {
@@ -53,6 +57,16 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             LedgerCategory.fromStorage(existing?.category) ?: LedgerCategory.FOOD
         )
     }
+    var accountId by remember(entryId) {
+        mutableStateOf(existing?.accountId ?: DefaultAccounts.CASH_ID)
+    }
+    var transferToId by remember(entryId) {
+        mutableStateOf(existing?.transferAccountId)
+    }
+    var showAdd by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+
+    val active = accounts.filter { !it.archived }
 
     Column(
         Modifier
@@ -93,7 +107,7 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
         }
         Spacer(Modifier.height(12.dp))
         Row {
-            listOf(EntryType.INCOME, EntryType.EXPENSE, EntryType.NO_TRADE).forEach { t ->
+            listOf(EntryType.INCOME, EntryType.EXPENSE, EntryType.TRANSFER, EntryType.NO_TRADE).forEach { t ->
                 FilterChip(
                     selected = type == t,
                     onClick = { type = t },
@@ -114,6 +128,15 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             }
         }
         if (type != EntryType.NO_TRADE) {
+            OutlinedTextField(
+                value = amountText,
+                onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
+                label = { Text("金額（港幣 HK\$）") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        if (type != EntryType.NO_TRADE && type != EntryType.TRANSFER) {
             Text("分類・${category.farmObjectZh}", color = FarmText, style = MaterialTheme.typography.labelLarge)
             Row {
                 val cats = if (type == EntryType.INCOME) {
@@ -130,12 +153,29 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
                     )
                 }
             }
-            OutlinedTextField(
-                value = amountText,
-                onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
-                label = { Text("金額（港幣）") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth()
+            Text("帳戶", color = FarmText, style = MaterialTheme.typography.labelLarge)
+            AccountPillRow(
+                accounts = active,
+                selectedId = accountId,
+                onSelect = { accountId = it },
+                onAdd = { showAdd = true }
+            )
+        }
+        if (type == EntryType.TRANSFER) {
+            Text("由帳戶", color = FarmText, style = MaterialTheme.typography.labelLarge)
+            AccountPillRow(
+                accounts = active,
+                selectedId = accountId,
+                onSelect = { accountId = it },
+                onAdd = { showAdd = true }
+            )
+            Text("到帳戶", color = FarmText, style = MaterialTheme.typography.labelLarge)
+            AccountPillRow(
+                accounts = active.filter { it.id != accountId },
+                selectedId = transferToId,
+                onSelect = { transferToId = it },
+                onAdd = { showAdd = true },
+                allowEmptyHint = "揀對方帳戶"
             )
         }
         OutlinedTextField(
@@ -149,11 +189,24 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             onClick = {
                 val major = amountText.toDoubleOrNull() ?: 0.0
                 val minor = (major * 100).toLong()
-                val catName = if (type == EntryType.NO_TRADE) null else category.name
+                val catName = when (type) {
+                    EntryType.NO_TRADE, EntryType.TRANSFER -> null
+                    else -> category.name
+                }
                 if (existing == null) {
-                    vm.addEntry(type, minor, note, category = catName)
+                    vm.addEntry(
+                        type, minor, note,
+                        category = catName,
+                        accountId = accountId,
+                        transferAccountId = if (type == EntryType.TRANSFER) transferToId else null
+                    )
                 } else {
-                    vm.updateEntry(existing.id, type, minor, note, category = catName)
+                    vm.updateEntry(
+                        existing.id, type, minor, note,
+                        category = catName,
+                        accountId = accountId,
+                        transferAccountId = if (type == EntryType.TRANSFER) transferToId else null
+                    )
                 }
                 onDone()
             },
@@ -166,5 +219,33 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
         }
         TextButton(onClick = onDone) { Text("取消") }
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showAdd) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showAdd = false },
+            title = { Text("新增帳戶") },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text("名稱") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newName.isNotBlank()) {
+                        vm.addAccount(newName)
+                        newName = ""
+                        showAdd = false
+                    }
+                }) { Text("新增") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAdd = false }) { Text("取消") }
+            }
+        )
     }
 }

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,13 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +38,10 @@ fun SettingsScreen(vm: AppViewModel) {
     val scope = rememberCoroutineScope()
     val message by vm.message.collectAsState()
     val progress by vm.progress.collectAsState()
+    val accounts by vm.accounts.collectAsState()
+    var showAdd by remember { mutableStateOf(false) }
+    var renameId by remember { mutableStateOf<String?>(null) }
+    var nameDraft by remember { mutableStateOf("") }
 
     val createJson = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -84,7 +94,70 @@ fun SettingsScreen(vm: AppViewModel) {
         Text("設定", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text("完全離線・無 INTERNET 權限・無廣告／分析／登入")
-        Text("版本 0.1.0-mvp")
+        Text("版本 0.5.1-m5")
+        Spacer(Modifier.height(16.dp))
+
+        Text("帳戶（真港幣・免費唔鎖）", style = MaterialTheme.typography.titleMedium)
+        Text("新增／改名；流水保留。轉帳喺入帳揀「轉帳」。", style = MaterialTheme.typography.bodySmall)
+        accounts.filter { !it.archived }.forEach { a ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text(a.nameZh, Modifier.weight(1f))
+                TextButton(onClick = {
+                    renameId = a.id
+                    nameDraft = a.nameZh
+                }) { Text("改名") }
+            }
+        }
+        OutlinedButton(onClick = { showAdd = true; nameDraft = "" }, modifier = Modifier.fillMaxWidth()) {
+            Text("＋新增帳戶")
+        }
+        if (showAdd) {
+            AlertDialog(
+                onDismissRequest = { showAdd = false },
+                title = { Text("新增帳戶") },
+                text = {
+                    OutlinedTextField(
+                        value = nameDraft,
+                        onValueChange = { nameDraft = it },
+                        label = { Text("名稱（PayMe／信用卡／銀行…）") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (nameDraft.isNotBlank()) {
+                            vm.addAccount(nameDraft)
+                            showAdd = false
+                        }
+                    }) { Text("新增") }
+                },
+                dismissButton = { TextButton(onClick = { showAdd = false }) { Text("取消") } }
+            )
+        }
+        renameId?.let { id ->
+            AlertDialog(
+                onDismissRequest = { renameId = null },
+                title = { Text("改名帳戶") },
+                text = {
+                    OutlinedTextField(
+                        value = nameDraft,
+                        onValueChange = { nameDraft = it },
+                        label = { Text("新名稱") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        vm.renameAccount(id, nameDraft)
+                        renameId = null
+                    }) { Text("儲存") }
+                },
+                dismissButton = { TextButton(onClick = { renameId = null }) { Text("取消") } }
+            )
+        }
+
         Spacer(Modifier.height(16.dp))
         Text("資料匯出／匯入（SAF）", style = MaterialTheme.typography.titleMedium)
         Button(onClick = { createJson.launch("farm-ledger-backup.json") }, modifier = Modifier.fillMaxWidth()) {

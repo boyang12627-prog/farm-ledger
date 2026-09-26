@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.EntryType
+import com.farmledger.app.domain.model.LedgerAccount
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.model.LedgerEntry
 import com.farmledger.app.ui.AppViewModel
@@ -55,13 +56,17 @@ fun LedgerScreen(
     onOpenSettings: () -> Unit = {}
 ) {
     val all by vm.allEntries.collectAsState()
+    val accounts by vm.accounts.collectAsState()
     val message by vm.message.collectAsState()
     var query by remember { mutableStateOf("") }
     var editingId by remember { mutableStateOf<String?>(null) }
     var showEditor by remember { mutableStateOf(false) }
 
-    val filtered = remember(all, query) {
-        filterEntries(all, query)
+    val accountNames = remember(accounts) {
+        accounts.associate { it.id to it.nameZh }
+    }
+    val filtered = remember(all, query, accountNames) {
+        filterEntries(all, query, accountNames)
     }
 
     if (showEditor) {
@@ -99,7 +104,7 @@ fun LedgerScreen(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("搜尋備註／金額／分類") },
+                label = { Text("搜尋備註／金額／分類／帳戶") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -152,6 +157,11 @@ fun LedgerScreen(
                                                 color = FarmSoil
                                             )
                                         }
+                                        Text(
+                                            accountLine(e, accountNames),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = FarmSoil
+                                        )
                                     }
                                 }
                                 Text(
@@ -181,7 +191,11 @@ fun LedgerScreen(
     }
 }
 
-fun filterEntries(entries: List<LedgerEntry>, query: String): List<LedgerEntry> {
+fun filterEntries(
+    entries: List<LedgerEntry>,
+    query: String,
+    accountNames: Map<String, String> = emptyMap()
+): List<LedgerEntry> {
     val q = query.trim()
     if (q.isEmpty()) return entries
     val qLower = q.lowercase()
@@ -192,7 +206,22 @@ fun filterEntries(entries: List<LedgerEntry>, query: String): List<LedgerEntry> 
             formatMinor(e.amountMinor).contains(q) ||
             e.amountMinor.toString().contains(q) ||
             e.localDate.contains(q) ||
-            typeZh(e.type).contains(q)
+            typeZh(e.type).contains(q) ||
+            accountNames[e.accountId]?.contains(q) == true ||
+            accountNames[e.transferAccountId]?.contains(q) == true ||
+            e.accountId.contains(qLower) ||
+            (e.transferAccountId?.contains(qLower) == true)
+    }
+}
+
+fun accountLine(e: LedgerEntry, accountNames: Map<String, String>): String {
+    val from = accountNames[e.accountId] ?: e.accountId
+    return when (e.type) {
+        EntryType.TRANSFER -> {
+            val to = e.transferAccountId?.let { accountNames[it] ?: it } ?: "?"
+            "轉帳 $from → $to"
+        }
+        else -> "帳戶・$from"
     }
 }
 

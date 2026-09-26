@@ -29,7 +29,7 @@ enum class LedgerCategory(val nameZh: String, val farmObjectZh: String) {
     }
 }
 
-/** 帳戶 stub（M5 單一預設「現金」；完整多帳戶 UI 之後） */
+/** 真港幣帳戶（預設「現金」；可免費新增多個） */
 @Serializable
 data class LedgerAccount(
     val id: String,

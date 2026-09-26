@@ -64,6 +64,8 @@ import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.CropTimers
 import com.farmledger.app.domain.model.DayPhase
 import com.farmledger.app.domain.model.EntryStatus
+import com.farmledger.app.domain.model.EntryType
+import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.model.GrowthSpendCosts
 import com.farmledger.app.domain.model.InventoryFeedCosts
 import com.farmledger.app.domain.model.InventoryItemKind
@@ -75,8 +77,10 @@ import com.farmledger.app.domain.usecase.DayLoopLogic
 import com.farmledger.app.domain.usecase.FarmLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.usecase.InventoryLogic
+import com.farmledger.app.domain.usecase.MissedCategoryLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.screens.ledger.EntryEditScreen
+import com.farmledger.app.ui.screens.ledger.formatMinor
 import com.farmledger.app.ui.theme.FarmBg
 import com.farmledger.app.ui.theme.FarmGrowth
 import com.farmledger.app.ui.theme.FarmMudHighlight
@@ -106,7 +110,8 @@ private sealed class LedgerSheetPage {
 fun FarmScreen(
     vm: AppViewModel,
     onOpenWeekly: () -> Unit = {},
-    onOpenSettings: () -> Unit = {}
+    onOpenSettings: () -> Unit = {},
+    onOpenEntry: (LedgerCategory?) -> Unit = {}
 ) {
     val plots by vm.plots.collectAsState()
     val progress by vm.progress.collectAsState()
@@ -115,6 +120,7 @@ fun FarmScreen(
     val gameDay by vm.gameDay.collectAsState()
     val inventory by vm.inventory.collectAsState()
     val entries by vm.entries.collectAsState()
+    val allEntries by vm.allEntries.collectAsState()
     val message by vm.message.collectAsState()
     val petFeedbackUntilMs by vm.petFeedbackUntilMs.collectAsState()
     var selectedCrop by remember { mutableStateOf(CropKind.WHEAT) }
@@ -135,6 +141,15 @@ fun FarmScreen(
     }
     val panelGrass = if (caps.greenerDenser) FarmPanelGrassDense else FarmPanelGrass
     val seedTotal = remember(inventory) { InventoryLogic.totalSeeds(inventory) }
+    val hkdBalanceMinor = remember(allEntries) {
+        allEntries.filter { it.status == EntryStatus.ACTIVE }.fold(0L) { acc, e ->
+            when (e.type) {
+                EntryType.INCOME -> acc + e.amountMinor
+                EntryType.EXPENSE -> acc - e.amountMinor
+                else -> acc // TRANSFER / NO_TRADE 唔改總餘額
+            }
+        }
+    }
     val cropTotal = remember(inventory) { InventoryLogic.totalCrops(inventory) }
     val selectedSeedQty = remember(inventory, selectedCrop) {
         InventoryLogic.seedQty(inventory, selectedCrop)
@@ -149,6 +164,7 @@ fun FarmScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(12.dp)) {
+        // 頂欄：季節／天氣／日數 ＋ HK$ 餘額｜種子幣 分欄（唔混）
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -156,64 +172,55 @@ fun FarmScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "農場・${caps.stage.nameZh}",
-                    style = MaterialTheme.typography.headlineSmall,
+                    "春・第 ${gameDay.gameDay} 日・${gameDay.phase.nameZh}",
+                    style = MaterialTheme.typography.titleMedium,
                     color = FarmText,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "第 ${gameDay.gameDay} 日・${gameDay.phase.nameZh}" +
-                        " · 累計結算 ${progress.totalSettleDays}" +
-                        (nextUnlock?.let { " → ${it.second}" } ?: ""),
+                    "牧場・${caps.stage.nameZh}" +
+                        (nextUnlock?.let { " → ${it.second}" } ?: "") +
+                        " · 結算 ${progress.totalSettleDays} 日",
                     style = MaterialTheme.typography.bodySmall,
                     color = FarmSoil
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // HK$ 真帳餘額（獨立欄）
                 Image(
-                    painterResource(R.drawable.ic_clock),
-                    contentDescription = "時段",
-                    modifier = Modifier.size(22.dp),
+                    painterResource(R.drawable.ic_coin_plus),
+                    contentDescription = "港幣餘額",
+                    modifier = Modifier.size(18.dp),
                     contentScale = ContentScale.FillBounds
                 )
                 Text(
-                    " ${gameDay.phase.nameZh}",
+                    " HK$${formatMinor(hkdBalanceMinor)}",
                     color = FarmText,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Spacer(Modifier.size(10.dp))
+                // 種子幣（牧場獎勵，≠ HKD）
+                Image(
+                    painterResource(R.drawable.ic_seed),
+                    contentDescription = "種子幣",
+                    modifier = Modifier.size(18.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Text(
+                    " ${progress.seedCoins}",
+                    color = FarmGrowth,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge
                 )
                 Spacer(Modifier.size(8.dp))
                 Image(
                     painterResource(R.drawable.ic_growth_point),
                     contentDescription = "成長點",
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(16.dp),
                     contentScale = ContentScale.FillBounds
                 )
-                Text(" ${progress.growthPoints}", color = FarmText, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.size(8.dp))
-                Image(
-                    painterResource(R.drawable.ic_seed),
-                    contentDescription = "種子",
-                    modifier = Modifier.size(22.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(" $seedTotal", color = FarmText)
-                Spacer(Modifier.size(6.dp))
-                Image(
-                    painterResource(R.drawable.ic_coin_plus),
-                    contentDescription = "種子幣",
-                    modifier = Modifier.size(20.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(" ${progress.seedCoins}", color = FarmText, style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.size(6.dp))
-                Image(
-                    painterResource(R.drawable.ic_sell_basket),
-                    contentDescription = "收成",
-                    modifier = Modifier.size(20.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(" $cropTotal", color = FarmSoil, style = MaterialTheme.typography.labelMedium)
+                Text(" ${progress.growthPoints}", color = FarmSoil, style = MaterialTheme.typography.labelMedium)
             }
         }
 
@@ -466,21 +473,18 @@ fun FarmScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(Modifier.fillMaxSize()) {
-                FarmSceneLayer(
+                val missed = remember(allEntries, today) {
+                    MissedCategoryLogic.missedCategories(allEntries, today)
+                }
+                RanchHotspotScene(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
-                    interactive = true,
-                    capabilities = caps,
-                    placedDecorIds = decorations.filter { it.placed }.map { it.id }.toSet(),
-                    dayPhase = gameDay.phase,
-                    growthPoints = progress.growthPoints,
-                    petFeedbackUntilMs = petFeedbackUntilMs,
-                    onPetTap = {
-                        if (caps.petFeedSlots > 0) vm.feedPet()
-                    },
-                    onShopTap = { overlay = FarmOverlay.Shop },
-                    shopHighlight = DayLoopLogic.isShopPreferred(gameDay.phase)
+                    missedCategories = missed,
+                    onHotspotTap = { cat ->
+                        vm.prefillEntryCategory(cat)
+                        onOpenEntry(cat)
+                    }
                 )
                 Box(
                     Modifier
@@ -1005,6 +1009,7 @@ private fun LedgerOverlayContent(
     onGoSettle: () -> Unit
 ) {
     val entries by vm.entries.collectAsState()
+    val allEntries by vm.allEntries.collectAsState()
     val date by vm.selectedDate.collectAsState()
     Column(
         Modifier
