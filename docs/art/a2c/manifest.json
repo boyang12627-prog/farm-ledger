@@ -1,0 +1,196 @@
+{
+  "phase": "A2c",
+  "title": "可組裝 UI 元件包",
+  "style": "暖色 SoS／半手繪自繪；禁止官方商標角色",
+  "palette": {
+    "wood": "#6B4A2E",
+    "cream": "#F5E6C8",
+    "ink": "#3D2A1A",
+    "stamp": "#C45C4A"
+  },
+  "hotspots": [
+    {
+      "id": "food_table",
+      "category": "飲食",
+      "label_zh": "餐桌灶",
+      "files": {
+        "idle": "hotspots/food_table_idle.png",
+        "pressed": "hotspots/food_table_pressed.png",
+        "hasEntry": "hotspots/food_table_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.22,
+        "fy": 0.55,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "transport_bike",
+      "category": "交通",
+      "label_zh": "小路單車",
+      "files": {
+        "idle": "hotspots/transport_bike_idle.png",
+        "pressed": "hotspots/transport_bike_pressed.png",
+        "hasEntry": "hotspots/transport_bike_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.38,
+        "fy": 0.62,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "housing_porch",
+      "category": "住屋",
+      "label_zh": "門廊",
+      "files": {
+        "idle": "hotspots/housing_porch_idle.png",
+        "pressed": "hotspots/housing_porch_pressed.png",
+        "hasEntry": "hotspots/housing_porch_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.62,
+        "fy": 0.38,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "daily_crates",
+      "category": "日用",
+      "label_zh": "木箱",
+      "files": {
+        "idle": "hotspots/daily_crates_idle.png",
+        "pressed": "hotspots/daily_crates_pressed.png",
+        "hasEntry": "hotspots/daily_crates_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.78,
+        "fy": 0.52,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "fun_garden_pond",
+      "category": "娛樂",
+      "label_zh": "花圃魚塘",
+      "files": {
+        "idle": "hotspots/fun_garden_pond_idle.png",
+        "pressed": "hotspots/fun_garden_pond_pressed.png",
+        "hasEntry": "hotspots/fun_garden_pond_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.28,
+        "fy": 0.72,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "health_herbs",
+      "category": "健康",
+      "label_zh": "藥草",
+      "files": {
+        "idle": "hotspots/health_herbs_idle.png",
+        "pressed": "hotspots/health_herbs_pressed.png",
+        "hasEntry": "hotspots/health_herbs_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.72,
+        "fy": 0.68,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "income_mail_basket",
+      "category": "收入",
+      "label_zh": "郵箱收成籃",
+      "files": {
+        "idle": "hotspots/income_mail_basket_idle.png",
+        "pressed": "hotspots/income_mail_basket_pressed.png",
+        "hasEntry": "hotspots/income_mail_basket_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.82,
+        "fy": 0.36,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "savings_piggy",
+      "category": "儲蓄",
+      "label_zh": "撲滿",
+      "files": {
+        "idle": "hotspots/savings_piggy_idle.png",
+        "pressed": "hotspots/savings_piggy_pressed.png",
+        "hasEntry": "hotspots/savings_piggy_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.48,
+        "fy": 0.48,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "other_notice",
+      "category": "其他",
+      "label_zh": "告示牌",
+      "files": {
+        "idle": "hotspots/other_notice_idle.png",
+        "pressed": "hotspots/other_notice_pressed.png",
+        "hasEntry": "hotspots/other_notice_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.55,
+        "fy": 0.7,
+        "suggested_width_dp": 72
+      }
+    }
+  ],
+  "topbar": [
+    "topbar/season_stamp_spring.png",
+    "topbar/weather_sunny.png",
+    "topbar/weather_cloudy.png",
+    "topbar/weather_rainy.png",
+    "topbar/weather_windy.png",
+    "topbar/streak_plaque.png",
+    "topbar/seed_coin_pouch.png"
+  ],
+  "tabbar": {
+    "ranch": {
+      "selected": "tabbar/tab_ranch_selected.png",
+      "unselected": "tabbar/tab_ranch_unselected.png",
+      "label": "牧場"
+    },
+    "entry": {
+      "selected": "tabbar/tab_entry_selected.png",
+      "unselected": "tabbar/tab_entry_unselected.png",
+      "label": "入帳"
+    },
+    "ledger": {
+      "selected": "tabbar/tab_ledger_selected.png",
+      "unselected": "tabbar/tab_ledger_unselected.png",
+      "label": "帳簿"
+    },
+    "diary": {
+      "selected": "tabbar/tab_diary_selected.png",
+      "unselected": "tabbar/tab_diary_unselected.png",
+      "label": "日記"
+    }
+  },
+  "sheets": [
+    "sheets/entry_clipboard.png",
+    "sheets/ledger_paper.png",
+    "sheets/diary_paper.png",
+    "sheets/empty_state_illustration.png",
+    "sheets/floating_wood_sign.png"
+  ],
+  "overlays": [
+    "overlays/grass_layer_1.png",
+    "overlays/grass_layer_2.png",
+    "overlays/grass_layer_3.png",
+    "overlays/stamp_sprout.png"
+  ],
+  "ranch": [
+    "ranch/spring_ranch_base.png",
+    "ranch/spring_ranch_iso_filled_alt.png"
+  ]
+}
