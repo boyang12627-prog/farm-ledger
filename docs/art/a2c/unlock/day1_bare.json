@@ -1,0 +1,18 @@
+{
+  "version": "A2c-day1-bare",
+  "orientation": "landscape",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "rule": "開局淨空：零可點物件、零熱區標、零灰桩；有野要買先有。等策劃鎖解鎖表再開第一件建築層。",
+  "ranch_asset": "ranch/spring_ranch_bare_day1.png",
+  "visible_hotspots": [],
+  "previews": [
+    "previews/a2c_day1_bare_ranch.png",
+    "previews/a2c_day1_bare_ranch.jpg",
+    "previews/a2c_day1_bare_ranch_safezones.jpg"
+  ],
+  "note": "先前 day1_sparse（home/food/income）暫作「買咗起步三件後」參考；開局應先用 bare。",
+  "pending": "等策劃鎖解鎖表 → 再出第一件建築層預覽"
+}

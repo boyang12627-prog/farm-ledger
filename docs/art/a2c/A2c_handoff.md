@@ -53,3 +53,10 @@
 ## 第1日疏場
 
 見 `unlock/DAY1_SPARSE.md` ＋ `unlock/day1_sparse.json` ＋ `previews/a2c_day1_sparse_ranch.jpg`。
+
+
+---
+
+## Day1 淨空農地
+
+開局用 `unlock/DAY1_BARE.md`／`previews/a2c_day1_bare_ranch.jpg`（零物件）。sparse 係買起步件後。
