@@ -39,4 +39,11 @@ class MissedCategoryLogicTest {
         val missed = MissedCategoryLogic.missedExpenseChips(emptyList(), "2026-09-26")
         assertThat(missed).isEqualTo(LedgerCategory.expenseChips)
     }
+
+    @Test
+    fun weedStackCount_capsAtThree() {
+        assertThat(MissedCategoryLogic.weedStackCount(0)).isEqualTo(0)
+        assertThat(MissedCategoryLogic.weedStackCount(1)).isEqualTo(1)
+        assertThat(MissedCategoryLogic.weedStackCount(5)).isEqualTo(3)
+    }
 }

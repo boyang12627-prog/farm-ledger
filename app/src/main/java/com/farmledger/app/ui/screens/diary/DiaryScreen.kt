@@ -88,7 +88,7 @@ fun DiaryScreen(
                 color = FarmText,
                 fontWeight = FontWeight.Bold
             )
-            Text("殼層｜完整編輯器之後再做", style = MaterialTheme.typography.bodySmall, color = FarmSoil)
+            Text("日結／習慣摘要（唔係第二套帳簿）", style = MaterialTheme.typography.bodySmall, color = FarmSoil)
             Spacer(Modifier.height(12.dp))
 
             // A2 日記內頁紙感
@@ -126,6 +126,12 @@ fun DiaryScreen(
                         color = FarmSoil
                     )
                     Spacer(Modifier.height(12.dp))
+                    Text(
+                        "連續記帳 ${progress.streakDays} 日 · 種子幣 ${progress.seedCoins}（≠港幣）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FarmSoil
+                    )
+                    Spacer(Modifier.height(8.dp))
                     Text("牧場物件・漏記長草", style = MaterialTheme.typography.titleSmall, color = FarmText)
                     if (missed.isEmpty()) {
                         Text("常用分類今日都有影子，牧場冇長草。", color = FarmSoil)

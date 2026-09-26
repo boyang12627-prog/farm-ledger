@@ -78,6 +78,8 @@ import com.farmledger.app.domain.usecase.FarmLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.usecase.InventoryLogic
 import com.farmledger.app.domain.usecase.MissedCategoryLogic
+import com.farmledger.app.ui.components.RanchTopBar
+import com.farmledger.app.domain.usecase.HotspotInteractionLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.screens.ledger.EntryEditScreen
 import com.farmledger.app.ui.screens.ledger.formatMinor
@@ -121,6 +123,7 @@ fun FarmScreen(
     val inventory by vm.inventory.collectAsState()
     val entries by vm.entries.collectAsState()
     val allEntries by vm.allEntries.collectAsState()
+    val accounts by vm.accounts.collectAsState()
     val message by vm.message.collectAsState()
     val petFeedbackUntilMs by vm.petFeedbackUntilMs.collectAsState()
     var selectedCrop by remember { mutableStateOf(CropKind.WHEAT) }
@@ -164,65 +167,14 @@ fun FarmScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(12.dp)) {
-        // 頂欄：季節／天氣／日數 ＋ HK$ 餘額｜種子幣 分欄（唔混）
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "春・第 ${gameDay.gameDay} 日・${gameDay.phase.nameZh}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = FarmText,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "牧場・${caps.stage.nameZh}" +
-                        (nextUnlock?.let { " → ${it.second}" } ?: "") +
-                        " · 結算 ${progress.totalSettleDays} 日",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = FarmSoil
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // HK$ 真帳餘額（獨立欄）
-                Image(
-                    painterResource(R.drawable.ic_coin_plus),
-                    contentDescription = "港幣餘額",
-                    modifier = Modifier.size(18.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(
-                    " HK$${formatMinor(hkdBalanceMinor)}",
-                    color = FarmText,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Spacer(Modifier.size(10.dp))
-                // 種子幣（牧場獎勵，≠ HKD）
-                Image(
-                    painterResource(R.drawable.ic_seed),
-                    contentDescription = "種子幣",
-                    modifier = Modifier.size(18.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(
-                    " ${progress.seedCoins}",
-                    color = FarmGrowth,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Spacer(Modifier.size(8.dp))
-                Image(
-                    painterResource(R.drawable.ic_growth_point),
-                    contentDescription = "成長點",
-                    modifier = Modifier.size(16.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Text(" ${progress.growthPoints}", color = FarmSoil, style = MaterialTheme.typography.labelMedium)
-            }
-        }
+        // 頂欄：真實 Compose 木框 chip（季節／天氣時段／連續記帳／種子幣）；唔印死地圖
+        RanchTopBar(
+            seasonLine = "春・第 ${gameDay.gameDay} 日",
+            weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,
+            streakDays = progress.streakDays,
+            seedCoins = progress.seedCoins,
+            hkdMonthSummary = "HK$${formatMinor(hkdBalanceMinor)}"
+        )
 
         if (progress.clockPaused) {
             Spacer(Modifier.height(6.dp))
@@ -476,11 +428,29 @@ fun FarmScreen(
                 val missed = remember(allEntries, today) {
                     MissedCategoryLogic.missedCategories(allEntries, today)
                 }
+                val loggedToday = remember(allEntries, today) {
+                    MissedCategoryLogic.usedCategoriesToday(allEntries, today)
+                }
+                val weedStacks = remember(allEntries, today) {
+                    MissedCategoryLogic.weedStacksByCategory(allEntries, today)
+                }
+                val activeAccountCount = remember(accounts) {
+                    accounts.count { !it.archived }
+                }
+                val latestSummaries = remember(allEntries) {
+                    LedgerCategory.entries.associateWith { cat ->
+                        HotspotInteractionLogic.latestEntrySummary(allEntries, cat)
+                    }
+                }
                 RanchHotspotScene(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
                     missedCategories = missed,
+                    weedStacks = weedStacks,
+                    loggedToday = loggedToday,
+                    activeAccountCount = activeAccountCount,
+                    latestSummaries = latestSummaries,
                     onHotspotTap = { cat ->
                         vm.prefillEntryCategory(cat)
                         onOpenEntry(cat)

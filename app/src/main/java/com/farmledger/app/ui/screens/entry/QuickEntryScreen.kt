@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,7 +40,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -186,28 +184,33 @@ fun QuickEntryScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // 2. 金額大字 HK$
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { amountText = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                    label = { Text("金額") },
-                    prefix = {
-                        Text(
-                            "HK$ ",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FarmText
-                        )
+                // 2. 金額大字 HK$ ＋ 木夾板數字鍵
+                Text(
+                    "HK$ " + (amountText.ifEmpty { "0" }),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                    color = FarmText,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.7f))
+                        .border(1.5.dp, FarmStroke, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    textAlign = TextAlign.End
+                )
+                Spacer(Modifier.height(8.dp))
+                ClipboardKeypad(
+                    onDigit = { d ->
+                        if (amountText.length < 10) amountText += d
                     },
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = FarmText,
-                        textAlign = TextAlign.Start
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("0.00", fontSize = 22.sp) }
+                    onDot = {
+                        if ('.' !in amountText) {
+                            amountText = if (amountText.isEmpty()) "0." else amountText + "."
+                        }
+                    },
+                    onBackspace = {
+                        if (amountText.isNotEmpty()) amountText = amountText.dropLast(1)
+                    }
                 )
 
                 if (type != EntryType.TRANSFER) {
@@ -434,6 +437,50 @@ fun AccountPillRow(
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Text("＋新增", color = FarmSoil, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+
+@Composable
+fun ClipboardKeypad(
+    onDigit: (String) -> Unit,
+    onDot: () -> Unit,
+    onBackspace: () -> Unit
+) {
+    val keys = listOf(
+        listOf("1", "2", "3"),
+        listOf("4", "5", "6"),
+        listOf("7", "8", "9"),
+        listOf(".", "0", "⌫")
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        keys.forEach { row ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                row.forEach { key ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(WoodBtn.copy(alpha = 0.85f))
+                            .border(1.dp, WoodBtnSel, RoundedCornerShape(10.dp))
+                            .clickable {
+                                when (key) {
+                                    "." -> onDot()
+                                    "⌫" -> onBackspace()
+                                    else -> onDigit(key)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(key, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    }
+                }
+            }
         }
     }
 }

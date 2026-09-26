@@ -4,28 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,6 +20,8 @@ import androidx.navigation.compose.rememberNavController
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.AppViewModelFactory
+import com.farmledger.app.ui.components.RanchBottomBar
+import com.farmledger.app.ui.components.RanchTab
 import com.farmledger.app.ui.navigation.Routes
 import com.farmledger.app.ui.screens.diary.DiaryScreen
 import com.farmledger.app.ui.screens.entry.QuickEntryScreen
@@ -42,9 +30,7 @@ import com.farmledger.app.ui.screens.ledger.LedgerScreen
 import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
 import com.farmledger.app.ui.screens.settings.SettingsScreen
 import com.farmledger.app.ui.screens.weekly.WeeklyReviewScreen
-import com.farmledger.app.ui.theme.FarmGrowth
 import com.farmledger.app.ui.theme.FarmLedgerTheme
-import com.farmledger.app.ui.theme.FarmText
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,83 +69,30 @@ fun FarmLedgerNav(vm: AppViewModel) {
         }
     }
 
+    val selectedTab = when (route) {
+        Routes.FARM -> RanchTab.RANCH
+        Routes.ENTRY -> RanchTab.ENTRY
+        Routes.LEDGER -> RanchTab.LEDGER
+        Routes.DIARY -> RanchTab.DIARY
+        else -> RanchTab.RANCH
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottom) {
-                // 四 Tab + 中央「＋」預留位（概念冊 page-01／page-05）
-                Box(Modifier.fillMaxWidth()) {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = route == Routes.FARM,
-                            onClick = { goTab(Routes.FARM) },
-                            icon = {
-                                Icon(
-                                    painterResource(R.drawable.nav_ranch),
-                                    contentDescription = "牧場",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = { Text("牧場") }
-                        )
-                        NavigationBarItem(
-                            selected = route == Routes.ENTRY,
-                            onClick = { goTab(Routes.ENTRY) },
-                            icon = {
-                                Icon(
-                                    painterResource(R.drawable.nav_entry),
-                                    contentDescription = "入帳",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = { Text("入帳") }
-                        )
-                        // 中央預留：空位唔搶焦點，上面疊細 FAB
-                        NavigationBarItem(
-                            selected = false,
-                            onClick = { goTab(Routes.ENTRY) },
-                            icon = { Box(Modifier.size(24.dp)) },
-                            label = { Text(" ") },
-                            enabled = true
-                        )
-                        NavigationBarItem(
-                            selected = route == Routes.LEDGER,
-                            onClick = { goTab(Routes.LEDGER) },
-                            icon = {
-                                Icon(
-                                    painterResource(R.drawable.nav_ledger),
-                                    contentDescription = "帳簿",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = { Text("帳簿") }
-                        )
-                        NavigationBarItem(
-                            selected = route == Routes.DIARY,
-                            onClick = { goTab(Routes.DIARY) },
-                            icon = {
-                                Icon(
-                                    painterResource(R.drawable.nav_diary),
-                                    contentDescription = "日記",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = { Text("日記") }
-                        )
-                    }
-                    FloatingActionButton(
-                        onClick = { goTab(Routes.ENTRY) },
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 4.dp)
-                            .size(48.dp),
-                        shape = CircleShape,
-                        containerColor = FarmGrowth,
-                        contentColor = FarmText
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "快速入帳")
-                    }
-                }
+                RanchBottomBar(
+                    selected = selectedTab,
+                    onSelect = { tab ->
+                        when (tab) {
+                            RanchTab.RANCH -> goTab(Routes.FARM)
+                            RanchTab.ENTRY -> goTab(Routes.ENTRY)
+                            RanchTab.LEDGER -> goTab(Routes.LEDGER)
+                            RanchTab.DIARY -> goTab(Routes.DIARY)
+                        }
+                    },
+                    onCenterFab = { goTab(Routes.ENTRY) }
+                )
             }
         }
     ) { padding ->
@@ -188,7 +121,10 @@ fun FarmLedgerNav(vm: AppViewModel) {
             composable(Routes.ENTRY) {
                 QuickEntryScreen(
                     vm = vm,
-                    onSaved = { /* stay for more entries */ },
+                    onSaved = {
+                        // 夾板流：確認後收板回牧場（≤3tap≤8s）
+                        goTab(Routes.FARM)
+                    },
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) }
                 )
             }
