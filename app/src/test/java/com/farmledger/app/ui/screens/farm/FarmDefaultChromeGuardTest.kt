@@ -91,7 +91,7 @@ class FarmDefaultChromeGuardTest {
     fun ranchHotspotScene_gatesByUnlockLogic() {
         val text = src("RanchHotspotScene.kt").readText(Charsets.UTF_8)
         assertTrue(text.contains("HotspotUnlockLogic"))
-        assertTrue(text.contains("ranchDay"))
+        assertTrue(text.contains("ownedHotspotIds"))
         assertFalse(
             "Must not draw LOCKED_GRAY piles on map",
             text.contains("LOCKED_GRAY")

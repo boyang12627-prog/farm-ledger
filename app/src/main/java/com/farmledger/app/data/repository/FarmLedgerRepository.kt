@@ -34,6 +34,9 @@ import com.farmledger.app.domain.usecase.DayPhaseResult
 import com.farmledger.app.domain.usecase.FarmLogic
 import com.farmledger.app.domain.usecase.InventoryLogic
 import com.farmledger.app.domain.usecase.FarmStageLogic
+import com.farmledger.app.domain.usecase.HotspotUnlockLogic
+import com.farmledger.app.domain.usecase.RanchBuildShopLogic
+import com.farmledger.app.domain.usecase.ShopContext
 import com.farmledger.app.domain.usecase.SettlementResult
 import com.farmledger.app.domain.usecase.WeeklyReviewLogic
 import com.farmledger.app.domain.usecase.WeeklyReviewResult
@@ -488,6 +491,29 @@ class FarmLedgerRepository(
         saveInventory(trade.inventory)
         prefs.saveProgress(progress.copy(seedCoins = progress.seedCoins + trade.seedCoinDelta))
         return trade.msg
+    }
+
+    /**
+     * 牧場熱區建造：扣種子幣＋標記 ownedHotspotIds。**唔寫**港幣帳。
+     */
+    suspend fun purchaseRanchBuild(hotspotId: String): String {
+        syncClock()
+        val progress = prefs.progressFlow.first()
+        val entries = observeAllEntries().first()
+        val ctx = ShopContext(
+            totalSettleDays = progress.totalSettleDays,
+            ownedIds = progress.ownedHotspotIds,
+            hasReconcileSuccess = HotspotUnlockLogic.hasReconcileSuccess(entries)
+        )
+        val result = RanchBuildShopLogic.purchase(hotspotId, progress.seedCoins, ctx)
+        if (!result.ok) return result.msg
+        prefs.saveProgress(
+            progress.copy(
+                seedCoins = progress.seedCoins + result.seedCoinDelta,
+                ownedHotspotIds = result.ownedIds
+            )
+        )
+        return result.msg
     }
 
 

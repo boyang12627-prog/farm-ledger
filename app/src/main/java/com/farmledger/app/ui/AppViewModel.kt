@@ -218,6 +218,10 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
         _message.value = repo.buyFeed(quantity)
     }
 
+    fun purchaseRanchBuild(hotspotId: String) = viewModelScope.launch {
+        _message.value = repo.purchaseRanchBuild(hotspotId)
+    }
+
     fun refreshFarm() = viewModelScope.launch { repo.refreshFarm() }
 
     fun feedPet() = viewModelScope.launch {

@@ -51,15 +51,20 @@ private const val SpriteScale = 0.14f
 private const val WhisperLongPressMs = 400L
 
 /**
- * A2c 可組裝牧場（橫屏）：`spring_ranch_base`＋熱區三態 drawable
+ * A2c 可組裝牧場（橫屏）：`spring_ranch_bare_day1`＋熱區三態 drawable
  * ＋ grass_layer 堆疊。默認**無常駐木牌**；長按出 whisper tip（同時最多 1）。
- * 大木牌浮標唔再掛熱區（見 A2c_landscape_label_spec）。
- * 可見性跟 [HotspotUnlockLogic]／day1_sparse.json：未解鎖＝完全隱藏。
+ * 可見性＝shop_day_reached AND owned（[HotspotUnlockLogic]／day1_empty.json）；
+ * 開局 owned 空＝淨農地，唔畫灰桩。
  */
 @Composable
 fun RanchHotspotScene(
     modifier: Modifier = Modifier,
-    /** 牧場／遊戲日（1-based）；對齊 day1_sparse.json 解鎖 */
+    /** 已購買熱區 id；開局 empty → 零物件 */
+    ownedHotspotIds: Set<String> = emptySet(),
+    /** 累計日結日（商店上架／渲染閘） */
+    totalSettleDays: Int = 0,
+    hasReconcileSuccess: Boolean = false,
+    /** @deprecated 保留呼叫端相容；唔再用於可見性 */
     ranchDay: Int = 1,
     expenseEntryCount: Int = 0,
     hasSavingsOrReconcileSuccess: Boolean = false,
@@ -74,12 +79,15 @@ fun RanchHotspotScene(
 ) {
     // 同時最多 1 個 tip
     var whisperCat by remember { mutableStateOf<LedgerCategory?>(null) }
-    val unlocked = remember(ranchDay, expenseEntryCount, hasSavingsOrReconcileSuccess) {
-        HotspotUnlockLogic.unlockedCategories(
-            ranchDay,
-            expenseEntryCount,
-            hasSavingsOrReconcileSuccess
+    val shopCtx = remember(ownedHotspotIds, totalSettleDays, hasReconcileSuccess) {
+        com.farmledger.app.domain.usecase.ShopContext(
+            totalSettleDays = totalSettleDays,
+            ownedIds = ownedHotspotIds,
+            hasReconcileSuccess = hasReconcileSuccess
         )
+    }
+    val unlocked = remember(shopCtx) {
+        HotspotUnlockLogic.unlockedCategories(shopCtx)
     }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
@@ -92,8 +100,8 @@ fun RanchHotspotScene(
         val grassDp = spriteDp * 1.05f
 
         Image(
-            painter = painterResource(R.drawable.spring_ranch_base),
-            contentDescription = "春季牧場",
+            painter = painterResource(R.drawable.spring_ranch_bare_day1),
+            contentDescription = "春季牧場（淨農地）",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillBounds
         )

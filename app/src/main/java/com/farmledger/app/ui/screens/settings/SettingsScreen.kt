@@ -105,7 +105,7 @@ fun SettingsScreen(
         Text("設定", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text("完全離線・無 INTERNET 權限・無廣告／分析／登入")
-        Text("版本 0.5.4b-land")
+        Text("版本 0.5.4e-bare")
         Spacer(Modifier.height(12.dp))
         Text("牧場進階", style = MaterialTheme.typography.titleMedium)
         Text(

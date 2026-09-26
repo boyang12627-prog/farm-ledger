@@ -114,7 +114,12 @@ data class PlayerProgress(
     val clockPaused: Boolean = false,   // 時鐘倒退時暫停獎勵
     val onboardingDone: Boolean = false,
     val weeklyReviewClaimedWeekId: String? = null,
-    val unlockedStreakRewards: Set<Int> = emptySet() // 3,5,7（種子加成，與場景階段分開）
+    val unlockedStreakRewards: Set<Int> = emptySet(), // 3,5,7（種子加成，與場景階段分開）
+    /**
+     * 已用種子幣建造／購買嘅熱區 id（home/food/…）。
+     * 場上可見＝shop_day_reached AND id∈此集合；開局 empty＝淨農地。
+     */
+    val ownedHotspotIds: Set<String> = emptySet()
 )
 
 /** 農場場景階段（由累計結算日解鎖） */
