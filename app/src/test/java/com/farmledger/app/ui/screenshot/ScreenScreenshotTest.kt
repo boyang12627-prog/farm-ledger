@@ -129,6 +129,50 @@ class ScreenScreenshotTest {
     }
 
     @Test
+    fun ranchSparseDay1() {
+        paparazzi.unsafeUpdateConfig(
+            deviceConfig = DeviceConfig.PIXEL_5.copy(
+                softButtons = false,
+                screenWidth = 1280,
+                screenHeight = 720,
+                orientation = ScreenOrientation.LANDSCAPE
+            )
+        )
+        paparazzi.snapshot(name = "05d_ranch_sparse") {
+            FarmLedgerTheme { RanchSparseDay1Fixture() }
+        }
+    }
+
+    @Test
+    fun topBarDayPlaque() {
+        paparazzi.unsafeUpdateConfig(
+            deviceConfig = DeviceConfig.PIXEL_5.copy(
+                softButtons = false,
+                screenWidth = 1280,
+                screenHeight = 160,
+                orientation = ScreenOrientation.LANDSCAPE
+            )
+        )
+        paparazzi.snapshot(name = "05d_topbar_day") {
+            FarmLedgerTheme {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFB8D4A8))
+                ) {
+                    RanchTopBar(
+                        seasonLine = "春・第 1 日",
+                        weatherOrPhase = "晨・荒地",
+                        ranchDay = 1,
+                        seedCoins = 20,
+                        onOpenSettings = {}
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
     fun farm() {
         paparazzi.snapshot(name = "04_farm") {
             FarmLedgerTheme { FarmFixture() }
@@ -666,6 +710,7 @@ private fun FarmFixture() {
 @Composable
 private fun RanchA2cFixture() {
     // Default ranch path — floating chips, no HKD HUD, no permanent hotspot labels
+    // Day 3 = food/home/income/daily visible (day1_sparse schedule)
     Column(
         Modifier
             .fillMaxSize()
@@ -674,7 +719,7 @@ private fun RanchA2cFixture() {
         RanchTopBar(
             seasonLine = "春・第 3 日",
             weatherOrPhase = "晝・萌芽",
-            streakDays = 3,
+            ranchDay = 3,
             seedCoins = 12,
             onOpenSettings = {}
         )
@@ -683,6 +728,7 @@ private fun RanchA2cFixture() {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
+            ranchDay = 3,
             missedCategories = emptySet(),
             weedStacks = emptyMap(),
             loggedToday = emptySet(),
@@ -703,7 +749,7 @@ private fun RanchLandscapeFixture() {
         RanchTopBar(
             seasonLine = "春・第 3 日",
             weatherOrPhase = "晝・萌芽",
-            streakDays = 3,
+            ranchDay = 3,
             seedCoins = 12,
             onOpenSettings = {}
         )
@@ -712,6 +758,40 @@ private fun RanchLandscapeFixture() {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
+            ranchDay = 3,
+            missedCategories = emptySet(),
+            weedStacks = emptyMap(),
+            loggedToday = emptySet(),
+            activeAccountCount = 2,
+            showHotspotLabels = false,
+            onHotspotTap = {}
+        )
+    }
+}
+
+@Composable
+private fun RanchSparseDay1Fixture() {
+    // 第1日疏場：只 home／food／income 三熱區；其餘完全隱藏
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFB8D4A8))
+    ) {
+        RanchTopBar(
+            seasonLine = "春・第 1 日",
+            weatherOrPhase = "晨・荒地",
+            ranchDay = 1,
+            seedCoins = 20,
+            onOpenSettings = {}
+        )
+        RanchHotspotScene(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            ranchDay = 1,
+            expenseEntryCount = 0,
+            hasSavingsOrReconcileSuccess = false,
             missedCategories = emptySet(),
             weedStacks = emptyMap(),
             loggedToday = emptySet(),

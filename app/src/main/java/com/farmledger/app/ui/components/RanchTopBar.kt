@@ -29,17 +29,18 @@ import com.farmledger.app.R
 private val Ink = Color(0xFF3D2A1A)
 
 /**
- * A2c 橫屏頂欄：浮空 chip 左右分（季節／天氣｜連續｜種子幣｜設定），
+ * A2c 橫屏頂欄：浮空 chip 左右分（季節／天氣｜牧場第幾日｜種子幣｜設定），
  * **唔做通欄實心條**；真帳 HKD 唔出現喺牧場 HUD（見 A2c_landscape_label_spec §4）。
  *
- * 季節章／天氣 = 圖 only（contentDescription 做 a11y）；連續牌只顯示 streak 短文；
+ * 季節章／天氣 = 圖 only（contentDescription 做 a11y）；
+ * 中牌顯示牧場／遊戲日「第 N 日」（**唔**顯示連續 streak；連續只放日記 Tab）；
  * 種子袋保留數字。
  */
 @Composable
 fun RanchTopBar(
     seasonLine: String,
     weatherOrPhase: String,
-    streakDays: Int,
+    ranchDay: Int,
     seedCoins: Int,
     onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -74,7 +75,7 @@ fun RanchTopBar(
             }
         }
 
-        // 中：連續日記牌（只 streak 短文，唔塞 seasonLine）
+        // 中：牧場第幾日牌（gameDay；唔係連續 streak）
         Box(
             Modifier
                 .weight(1f)
@@ -83,14 +84,14 @@ fun RanchTopBar(
         ) {
             Image(
                 painterResource(R.drawable.topbar_streak_plaque),
-                contentDescription = "連續記帳",
+                contentDescription = "牧場第幾日",
                 // Asset is tall (320×250); Fit would shrink it to ~56dp wide and
                 // leave Compose Text outside the visible wood — stretch to fill.
                 modifier = Modifier.width(260.dp).height(48.dp),
                 contentScale = ContentScale.FillBounds
             )
             Text(
-                text = "連續 $streakDays 日",
+                text = "第 $ranchDay 日",
                 color = Ink,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,

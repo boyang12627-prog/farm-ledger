@@ -76,4 +76,25 @@ class FarmDefaultChromeGuardTest {
         assertTrue(text.contains("等待・入晝") || text.contains("等待・入昏"))
         assertTrue(text.contains("fun LegacyFarmDayLoopScreen"))
     }
+
+    @Test
+    fun farmScreen_topBarUsesRanchDayNotStreak() {
+        val text = src("FarmScreen.kt").readText(Charsets.UTF_8)
+        assertTrue("FarmScreen must pass ranchDay to RanchTopBar", text.contains("ranchDay"))
+        assertFalse(
+            "FarmScreen must not pass streakDays to RanchTopBar plaque",
+            "streakDays = progress.streakDays" in text
+        )
+    }
+
+    @Test
+    fun ranchHotspotScene_gatesByUnlockLogic() {
+        val text = src("RanchHotspotScene.kt").readText(Charsets.UTF_8)
+        assertTrue(text.contains("HotspotUnlockLogic"))
+        assertTrue(text.contains("ranchDay"))
+        assertFalse(
+            "Must not draw LOCKED_GRAY piles on map",
+            text.contains("LOCKED_GRAY")
+        )
+    }
 }

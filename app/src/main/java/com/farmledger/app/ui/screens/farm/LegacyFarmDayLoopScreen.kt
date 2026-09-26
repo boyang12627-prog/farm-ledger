@@ -170,11 +170,11 @@ fun LegacyFarmDayLoopScreen(
     }
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars).padding(12.dp)) {
-        // 頂欄：真實 Compose 木框 chip（季節／天氣時段／連續記帳／種子幣）；唔印死地圖
+        // 頂欄：真實 Compose 木框 chip（季節／天氣時段／牧場第幾日／種子幣）；唔印死地圖
         RanchTopBar(
             seasonLine = "春・第 ${gameDay.gameDay} 日",
             weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,
-            streakDays = progress.streakDays,
+            ranchDay = gameDay.gameDay,
             seedCoins = progress.seedCoins,
             onOpenSettings = onOpenSettings
         )

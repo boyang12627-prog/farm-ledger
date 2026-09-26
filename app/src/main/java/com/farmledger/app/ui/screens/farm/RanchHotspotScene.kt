@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.HotspotInteractionLogic
+import com.farmledger.app.domain.usecase.HotspotUnlockLogic
 import com.farmledger.app.domain.usecase.HotspotVisualState
 import com.farmledger.app.ui.components.WhisperLabel
 import kotlinx.coroutines.delay
@@ -50,13 +51,18 @@ private const val SpriteScale = 0.14f
 private const val WhisperLongPressMs = 400L
 
 /**
- * A2c 可組裝牧場（橫屏）：`spring_ranch_base`＋九熱區三態 drawable
+ * A2c 可組裝牧場（橫屏）：`spring_ranch_base`＋熱區三態 drawable
  * ＋ grass_layer 堆疊。默認**無常駐木牌**；長按出 whisper tip（同時最多 1）。
  * 大木牌浮標唔再掛熱區（見 A2c_landscape_label_spec）。
+ * 可見性跟 [HotspotUnlockLogic]／day1_sparse.json：未解鎖＝完全隱藏。
  */
 @Composable
 fun RanchHotspotScene(
     modifier: Modifier = Modifier,
+    /** 牧場／遊戲日（1-based）；對齊 day1_sparse.json 解鎖 */
+    ranchDay: Int = 1,
+    expenseEntryCount: Int = 0,
+    hasSavingsOrReconcileSuccess: Boolean = false,
     missedCategories: Set<LedgerCategory> = LedgerCategory.entries.toSet(),
     weedStacks: Map<LedgerCategory, Int> = emptyMap(),
     loggedToday: Set<LedgerCategory> = emptySet(),
@@ -68,6 +74,13 @@ fun RanchHotspotScene(
 ) {
     // 同時最多 1 個 tip
     var whisperCat by remember { mutableStateOf<LedgerCategory?>(null) }
+    val unlocked = remember(ranchDay, expenseEntryCount, hasSavingsOrReconcileSuccess) {
+        HotspotUnlockLogic.unlockedCategories(
+            ranchDay,
+            expenseEntryCount,
+            hasSavingsOrReconcileSuccess
+        )
+    }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
         val density = LocalDensity.current
@@ -93,8 +106,9 @@ fun RanchHotspotScene(
             )
         }
 
-        // 漏記草（唔附大字）
+        // 漏記草：只 UNLOCKED 熱區（HIDDEN 唔畫草）
         RanchHotspots.forEach { spot ->
+            if (spot.category !in unlocked) return@forEach
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
             val stacks = weedStacks[spot.category]
@@ -125,7 +139,9 @@ fun RanchHotspotScene(
             }
         }
 
+        // 物件層：HIDDEN 完全唔畫（唔灰桩）
         RanchHotspots.forEach { spot ->
+            if (spot.category !in unlocked) return@forEach
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
             HotspotObjectLayer(
@@ -148,6 +164,7 @@ fun RanchHotspotScene(
         // 模式 B：長按 whisper（同時最多 1）；showHotspotLabels＝無障礙常駐細 tip
         if (showHotspotLabels && whisperCat == null) {
             RanchHotspots.forEach { spot ->
+                if (spot.category !in unlocked) return@forEach
                 val cxPx = spot.fx * RanchW * scaleX
                 val cyPx = spot.fy * RanchH * scaleY
                 val tipW = with(density) { 56.dp.toPx() }
@@ -164,6 +181,7 @@ fun RanchHotspotScene(
             }
         } else {
             whisperCat?.let { cat ->
+                if (cat !in unlocked) return@let
                 val spot = RanchHotspots.find { it.category == cat } ?: return@let
                 val cxPx = spot.fx * RanchW * scaleX
                 val cyPx = spot.fy * RanchH * scaleY

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.FarmStageLogic
+import com.farmledger.app.domain.usecase.HotspotUnlockLogic
 import com.farmledger.app.domain.usecase.MissedCategoryLogic
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.components.RanchTopBar
@@ -91,11 +92,11 @@ fun FarmScreen(
         )
 
         Column(Modifier.fillMaxSize()) {
-            // seasonLine / weatherOrPhase → contentDescription only（頂欄圖 only；連續牌只 streak）
+            // seasonLine / weatherOrPhase → contentDescription only；中牌＝牧場第幾日（唔顯示連續）
             RanchTopBar(
                 seasonLine = "春・第 ${gameDay.gameDay} 日",
                 weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,
-                streakDays = progress.streakDays,
+                ranchDay = gameDay.gameDay,
                 seedCoins = progress.seedCoins,
                 onOpenSettings = onOpenSettings
             )
@@ -113,11 +114,23 @@ fun FarmScreen(
                 }
             }
 
+            val expenseCount = remember(allEntries) {
+                HotspotUnlockLogic.activeExpenseCount(allEntries)
+            }
+            val savingsOrReconcile = remember(allEntries, progress.totalSettleDays) {
+                HotspotUnlockLogic.hasSavingsOrReconcileSuccess(
+                    allEntries,
+                    progress.totalSettleDays
+                )
+            }
             RanchHotspotScene(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
+                ranchDay = gameDay.gameDay,
+                expenseEntryCount = expenseCount,
+                hasSavingsOrReconcileSuccess = savingsOrReconcile,
                 missedCategories = missed,
                 weedStacks = weedStacks,
                 loggedToday = loggedToday,
