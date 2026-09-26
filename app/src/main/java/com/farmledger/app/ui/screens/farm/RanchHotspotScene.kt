@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -50,24 +52,18 @@ import com.farmledger.app.R
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.HotspotInteractionLogic
 import com.farmledger.app.domain.usecase.HotspotVisualState
-import com.farmledger.app.ui.components.WoodNameplate
 import kotlinx.coroutines.delay
 
-/** A2b 底圖邏輯尺寸（docs/art/a2/hotspot_map.json size_px 1280×720） */
+/** A2c／A2b 底圖邏輯尺寸（hotspot_map.json 1280×720） */
 private const val RanchW = 1280f
 private const val RanchH = 720f
-/** 物件精靈相對寬度比例 ~0.12–0.18 */
-private const val SpriteScale = 0.15f
-private val AmberRim = Color(0xFFE8A838)
-private val ActiveGlow = Color(0xFFFFF3C4)
-private val LabelBg = Color(0xFFF5E6C8)
+private const val SpriteScale = 0.14f
 private val LabelInk = Color(0xFF3D2A1A)
-private val Wood = Color(0xFF6B4A2E)
 
 /**
- * 春季牧場：iso 底圖＋九個**可見**物件層（idle／可點／按下／禁用）。
- * 漏記：堆疊草層 1–min(N,3)。點擊：≤200ms 縮放＋木名牌＋haptic，再回調入帳。
- * 浮標短 label 畫喺精靈之下、偏上，唔擋點擊。
+ * A2c 可組裝牧場：`spring_ranch_base`＋九熱區三態 drawable（idle／pressed／active）
+ * ＋ grass_layer_1..3 堆疊＋ floating_wood_sign 浮標。
+ * 禁用＝灰階 alpha；今日有記＝active 圖（唔取代可點／禁用）。
  */
 @Composable
 fun RanchHotspotScene(
@@ -99,11 +95,11 @@ fun RanchHotspotScene(
         val scaleX = with(density) { boxW.toPx() / RanchW }
         val scaleY = with(density) { maxHeight.toPx() / RanchH }
         val spriteDp = boxW * SpriteScale
-        val grassDp = spriteDp * 0.85f
         val halfPx = with(density) { spriteDp.toPx() / 2f }
+        val grassDp = spriteDp * 1.05f
 
         Image(
-            painter = painterResource(R.drawable.spring_ranch_iso),
+            painter = painterResource(R.drawable.spring_ranch_base),
             contentDescription = "春季牧場",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillBounds
@@ -117,55 +113,68 @@ fun RanchHotspotScene(
             )
         }
 
-        // 1) 浮標＋草（唔可點，畫喺精靈之下）
+        // 浮標＋草（喺精靈之下，唔搶點擊）
         RanchHotspots.forEach { spot ->
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
             val stacks = weedStacks[spot.category]
                 ?: if (spot.category in missedCategories) 1 else 0
-
             if (stacks > 0) {
                 val gHalf = with(density) { grassDp.toPx() / 2f }
-                for (i in 0 until stacks) {
-                    val ox = (i - (stacks - 1) / 2f) * 8f
-                    val oy = i * 6f
+                val layers = listOf(
+                    R.drawable.overlay_grass_layer_1,
+                    R.drawable.overlay_grass_layer_2,
+                    R.drawable.overlay_grass_layer_3
+                )
+                for (i in 0 until stacks.coerceAtMost(3)) {
                     Image(
-                        painter = painterResource(R.drawable.overlay_missed_grass),
+                        painter = painterResource(layers[i]),
                         contentDescription = if (i == 0) "漏記長草×$stacks" else null,
                         modifier = Modifier
                             .offset {
                                 IntOffset(
-                                    (cxPx - gHalf + ox).toInt(),
-                                    (cyPx - gHalf + oy + halfPx * 0.35f).toInt()
+                                    (cxPx - gHalf + i * 4f).toInt(),
+                                    (cyPx - gHalf + halfPx * 0.25f + i * 5f).toInt()
                                 )
                             }
                             .size(grassDp)
-                            .alpha(0.85f - i * 0.12f),
+                            .alpha(0.82f + i * 0.06f),
                         contentScale = ContentScale.Fit
                     )
                 }
             }
 
+            // A2c 木牌浮標
             val label = HotspotInteractionLogic.floatingLabel(spot.category)
-            val labelHalf = with(density) { 28.dp.toPx() }
-            val labelY = cyPx - halfPx - with(density) { 20.dp.toPx() }
-            Text(
-                text = label,
-                color = LabelInk,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
+            val signW = with(density) { 72.dp.toPx() }
+            val signH = with(density) { 28.dp.toPx() }
+            Box(
+                Modifier
                     .offset {
-                        IntOffset((cxPx - labelHalf).toInt(), labelY.toInt())
+                        IntOffset(
+                            (cxPx - signW / 2f).toInt(),
+                            (cyPx - halfPx - signH - 4f).toInt()
+                        )
                     }
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(LabelBg.copy(alpha = 0.92f))
-                    .border(1.dp, Wood, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-            )
+                    .size(width = 72.dp, height = 28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.floating_wood_sign),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+                Text(
+                    label,
+                    color = LabelInk,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
         }
 
-        // 2) 可見可點物件層（最上，接收點擊）
         RanchHotspots.forEach { spot ->
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
@@ -184,22 +193,56 @@ fun RanchHotspotScene(
             )
         }
 
+        // 點擊後名牌（木牌＋摘要）
         nameplateCat?.let { cat ->
             val spot = RanchHotspots.find { it.category == cat } ?: return@let
             val cxPx = spot.fx * RanchW * scaleX
             val cyPx = spot.fy * RanchH * scaleY
-            WoodNameplate(
-                title = HotspotInteractionLogic.nameplateTitle(cat),
-                subtitle = latestSummaries[cat],
-                modifier = Modifier
+            Box(
+                Modifier
                     .align(Alignment.TopStart)
                     .offset {
                         IntOffset(
-                            (cxPx - with(density) { 60.dp.toPx() }).toInt().coerceAtLeast(4),
-                            (cyPx - halfPx - with(density) { 56.dp.toPx() }).toInt().coerceAtLeast(4)
+                            (cxPx - with(density) { 70.dp.toPx() }).toInt().coerceAtLeast(4),
+                            (cyPx - halfPx - with(density) { 64.dp.toPx() }).toInt().coerceAtLeast(4)
                         )
                     }
-            )
+                    .widthIn(min = 120.dp, max = 160.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.floating_wood_sign),
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize().alpha(0.95f),
+                    contentScale = ContentScale.FillBounds
+                )
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFFF5E6C8).copy(alpha = 0.88f))
+                        .border(1.5.dp, Color(0xFF6B4A2E), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            HotspotInteractionLogic.nameplateTitle(cat),
+                            color = LabelInk,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                        latestSummaries[cat]?.let { sub ->
+                            Text(
+                                sub,
+                                color = LabelInk.copy(alpha = 0.75f),
+                                fontSize = 10.sp,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -230,8 +273,13 @@ private fun HotspotObjectLayer(
         animationSpec = tween(120),
         label = "hotspotScale"
     )
-    val greyMatrix = remember {
-        ColorMatrix().apply { setToSaturation(0.25f) }
+    val greyMatrix = remember { ColorMatrix().apply { setToSaturation(0.2f) } }
+
+    // drawable 三態：pressed > active(hasEntry) > idle；禁用仍顯示 idle＋灰
+    val drawable = when {
+        state == HotspotVisualState.PRESSED -> hotspotDrawable(spot.category, HotspotArtState.PRESSED)
+        loggedToday && enabled -> hotspotDrawable(spot.category, HotspotArtState.ACTIVE)
+        else -> hotspotDrawable(spot.category, HotspotArtState.IDLE)
     }
 
     Box(
@@ -245,19 +293,9 @@ private fun HotspotObjectLayer(
                         when (state) {
                             HotspotVisualState.DISABLED -> "（禁用）"
                             HotspotVisualState.PRESSED -> "（按下）"
-                            HotspotVisualState.CLICKABLE -> "（可點）"
-                            HotspotVisualState.IDLE -> "（可點）"
+                            else -> "（可點）"
                         }
             }
-            .then(
-                when {
-                    loggedToday && enabled ->
-                        Modifier.border(2.dp, ActiveGlow, RoundedCornerShape(10.dp))
-                    state == HotspotVisualState.PRESSED ->
-                        Modifier.border(2.5.dp, AmberRim, RoundedCornerShape(10.dp))
-                    else -> Modifier
-                }
-            )
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
@@ -270,37 +308,67 @@ private fun HotspotObjectLayer(
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(hotspotDrawable(spot.category)),
+            painter = painterResource(drawable),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit,
             colorFilter = if (state == HotspotVisualState.DISABLED) {
                 ColorFilter.colorMatrix(greyMatrix)
             } else null,
-            alpha = if (state == HotspotVisualState.DISABLED) 0.55f else 1f
+            alpha = if (state == HotspotVisualState.DISABLED) 0.5f else 1f
         )
-        if (loggedToday && enabled) {
-            Text(
-                "✓",
-                color = Wood,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.TopEnd)
-            )
-        }
     }
 }
 
-fun hotspotDrawable(category: LedgerCategory): Int = when (category) {
-    LedgerCategory.FOOD -> R.drawable.hotspot_food_table_stove
-    LedgerCategory.TRANSPORT -> R.drawable.hotspot_transit_path_bike
-    LedgerCategory.HOUSING -> R.drawable.hotspot_home_porch
-    LedgerCategory.DAILY -> R.drawable.hotspot_daily_crate
-    LedgerCategory.ENTERTAINMENT -> R.drawable.hotspot_fun_garden_pond
-    LedgerCategory.HEALTH -> R.drawable.hotspot_health_herbs
-    LedgerCategory.INCOME -> R.drawable.hotspot_income_mail_basket
-    LedgerCategory.SAVINGS -> R.drawable.hotspot_save_piggy
-    LedgerCategory.OTHER -> R.drawable.hotspot_other_sign
+enum class HotspotArtState { IDLE, PRESSED, ACTIVE }
+
+fun hotspotDrawable(category: LedgerCategory, art: HotspotArtState = HotspotArtState.IDLE): Int {
+    val stem = when (category) {
+        LedgerCategory.FOOD -> "food_table"
+        LedgerCategory.TRANSPORT -> "transport_bike"
+        LedgerCategory.HOUSING -> "housing_porch"
+        LedgerCategory.DAILY -> "daily_crates"
+        LedgerCategory.ENTERTAINMENT -> "fun_garden_pond"
+        LedgerCategory.HEALTH -> "health_herbs"
+        LedgerCategory.INCOME -> "income_mail_basket"
+        LedgerCategory.SAVINGS -> "savings_piggy"
+        LedgerCategory.OTHER -> "other_notice"
+    }
+    return when (art) {
+        HotspotArtState.IDLE -> when (stem) {
+            "food_table" -> R.drawable.hotspot_food_table_idle
+            "transport_bike" -> R.drawable.hotspot_transport_bike_idle
+            "housing_porch" -> R.drawable.hotspot_housing_porch_idle
+            "daily_crates" -> R.drawable.hotspot_daily_crates_idle
+            "fun_garden_pond" -> R.drawable.hotspot_fun_garden_pond_idle
+            "health_herbs" -> R.drawable.hotspot_health_herbs_idle
+            "income_mail_basket" -> R.drawable.hotspot_income_mail_basket_idle
+            "savings_piggy" -> R.drawable.hotspot_savings_piggy_idle
+            else -> R.drawable.hotspot_other_notice_idle
+        }
+        HotspotArtState.PRESSED -> when (stem) {
+            "food_table" -> R.drawable.hotspot_food_table_pressed
+            "transport_bike" -> R.drawable.hotspot_transport_bike_pressed
+            "housing_porch" -> R.drawable.hotspot_housing_porch_pressed
+            "daily_crates" -> R.drawable.hotspot_daily_crates_pressed
+            "fun_garden_pond" -> R.drawable.hotspot_fun_garden_pond_pressed
+            "health_herbs" -> R.drawable.hotspot_health_herbs_pressed
+            "income_mail_basket" -> R.drawable.hotspot_income_mail_basket_pressed
+            "savings_piggy" -> R.drawable.hotspot_savings_piggy_pressed
+            else -> R.drawable.hotspot_other_notice_pressed
+        }
+        HotspotArtState.ACTIVE -> when (stem) {
+            "food_table" -> R.drawable.hotspot_food_table_active
+            "transport_bike" -> R.drawable.hotspot_transport_bike_active
+            "housing_porch" -> R.drawable.hotspot_housing_porch_active
+            "daily_crates" -> R.drawable.hotspot_daily_crates_active
+            "fun_garden_pond" -> R.drawable.hotspot_fun_garden_pond_active
+            "health_herbs" -> R.drawable.hotspot_health_herbs_active
+            "income_mail_basket" -> R.drawable.hotspot_income_mail_basket_active
+            "savings_piggy" -> R.drawable.hotspot_savings_piggy_active
+            else -> R.drawable.hotspot_other_notice_active
+        }
+    }
 }
 
 data class RanchHotspot(
@@ -309,7 +377,7 @@ data class RanchHotspot(
     val fy: Float,
 )
 
-/** A2b 鎖定熱區（docs/art/a2/hotspot_map.json hotspots_normalized） */
+/** A2c／A2 鎖定熱區座標（docs/art/a2c/hotspot_map.json＝a2 同款 fx/fy） */
 val RanchHotspots: List<RanchHotspot> = listOf(
     RanchHotspot(LedgerCategory.FOOD, 0.42f, 0.40f),
     RanchHotspot(LedgerCategory.TRANSPORT, 0.28f, 0.48f),

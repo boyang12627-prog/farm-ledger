@@ -294,37 +294,32 @@ fun LedgerScreen(
             }
             if (filtered.isEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                Box(
+                Column(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .border(1.5.dp, FarmStroke, RoundedCornerShape(12.dp))
+                        .background(Parchment)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.ledger_paper),
-                        contentDescription = null,
-                        modifier = Modifier.matchParentSize(),
-                        contentScale = ContentScale.Crop,
-                        alpha = 0.5f
+                        painter = painterResource(R.drawable.empty_state_illustration),
+                        contentDescription = "空態插畫",
+                        modifier = Modifier.fillMaxWidth().height(140.dp),
+                        contentScale = ContentScale.Fit
                     )
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("📜", style = MaterialTheme.typography.displaySmall)
-                        Text(
-                            "帳簿仲係空白頁",
-                            fontWeight = FontWeight.Bold,
-                            color = FarmText
-                        )
-                        Text(
-                            "去「入帳」夾板記一筆真港幣流水；商店買賣唔會出現喺呢度。",
-                            color = FarmSoil,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "帳簿仲係空白頁",
+                        fontWeight = FontWeight.Bold,
+                        color = FarmText
+                    )
+                    Text(
+                        "去「入帳」夾板記一筆真港幣流水；商店買賣唔會出現喺呢度。",
+                        color = FarmSoil,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }

@@ -1,30 +1,30 @@
-# A2c_sys_gaps — 0.5.3-sys 美術缺口（給像素美術管家）
+# A2c_sys_gaps — 0.5.3-sys（工程已接入）
 
-工程版本：`0.5.3-sys`。A2c 目錄（`hotspots/` `overlays/` `ranch/` `sheets/` `tabbar/` `topbar/`）而家**空**；船用 A1 精靈＋A2 紙感／iso。
+**狀態（2026-09-26）：** A2c 可組裝包已 wire 入 `0.5.3-sys`。  
+底圖 `spring_ranch_base`、九熱區 idle／pressed／active、grass_layer_1..3、topbar／tabbar chrome、sheets（夾板／紙／浮標／空態）均已拷入 `res/drawable/`。
 
-## 已用（可暫用）
+## 已接入
 
-| 用途 | 現況素材 |
+| 用途 | drawable |
 |------|----------|
-| 牧場底圖 | `docs/art/a2/spring_ranch_iso.png` → `res/drawable/spring_ranch_iso` |
-| 九熱區精靈 | `docs/art/a1/hotspot_*.png` → `res/drawable/hotspot_*` |
-| 漏記草 | `docs/art/a2/overlay_missed_grass.png`（堆疊用同一張＋偏移；理想係分層草 tile） |
-| 入帳夾板 | `entry_clipboard.png` |
-| 帳簿／日記紙 | `ledger_paper.png` / `diary_cover.png` / `diary_page.png` |
-| 底欄 icon | `nav_ranch/entry/ledger/diary.png` |
+| 牧場底 | `spring_ranch_base` |
+| 熱區×3 | `hotspot_{stem}_{idle\|pressed\|active}` |
+| 漏記草 | `overlay_grass_layer_1..3` |
+| 浮標木牌 | `floating_wood_sign` |
+| 頂欄 | `topbar_season_stamp_spring`／`weather_*`／`streak_plaque`／`seed_coin_pouch` |
+| 底欄 | `tab_*_{selected\|unselected}` |
+| 紙材 | `entry_clipboard`／`ledger_paper`／`diary_paper`／`empty_state_illustration` |
 
-## 缺口（A2c 優先補）
+錨點：`docs/art/a2c/hotspot_map.json`（同 a2 fx/fy）。
 
-1. **熱區四態精靈**（每分類 idle／pressed／active-badge／disabled）— 而家 Compose 縮放＋色矩陣代替。  
-2. **獨立草層 tile**（1／2／3 疊）— 而家同一 `overlay_missed_grass` 偏移堆疊。  
-3. **木名牌／浮標** 9-slice 或像素牌 — 而家 Compose 奶油木框。  
-4. **頂欄木框 chip**（季節／天氣／連續／種子幣）— 而家 Compose `RanchTopBar`。  
-5. **底欄木框選中態** — 而家 Compose `RanchBottomBar`＋nav icon。  
-6. **入帳數字鍵鍵帽**、確認印章「記入牧場」— 而家 Compose 木鈕。  
-7. **帳簿／日記空態插畫**（牧場靜物）— 而家紙底＋文案。  
-8. 若 A2c 有更高清 iso／熱區分離層：請放 `docs/art/a2c/ranch/`、`hotspots/`，工程優先切換。
+## 殘餘可選（非 blocker）
+
+1. 各天氣依真實季節／氣象切換（而家預設 sunny＋時段字）。  
+2. Tab 圖若要純 icon 無燒字 → A2d。  
+3. 禁用態專用灰圖（而家 Compose 色矩陣＋alpha）。  
+4. `source_sheets/` 唔進 APK（正確）。
 
 ## 唔好做
 
 - 官方牧場物語／SoS 商標角色  
-- 把港幣金額畫成「農場幣」圖示混欄  
+- 港幣同種子幣混圖欄  

@@ -99,7 +99,7 @@ fun DiaryScreen(
                     .border(2.dp, Wood, RoundedCornerShape(12.dp))
             ) {
                 Image(
-                    painter = painterResource(R.drawable.diary_page),
+                    painter = painterResource(R.drawable.diary_paper),
                     contentDescription = "日記內頁",
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop

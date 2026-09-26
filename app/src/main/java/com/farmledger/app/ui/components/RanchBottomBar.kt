@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,27 +24,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.farmledger.app.R
 
 private val Wood = Color(0xFF6B4A2E)
-private val WoodDark = Color(0xFF4A321F)
 private val Cream = Color(0xFFF5E6C8)
 private val Ink = Color(0xFF3D2A1A)
-private val StampRed = Color(0xFFC45C4A)
 private val Growth = Color(0xFF8FBF6A)
 
-enum class RanchTab(val label: String, val iconRes: Int) {
-    RANCH("牧場", R.drawable.nav_ranch),
-    ENTRY("入帳", R.drawable.nav_entry),
-    LEDGER("帳簿", R.drawable.nav_ledger),
-    DIARY("日記", R.drawable.nav_diary)
+enum class RanchTab(val label: String) {
+    RANCH("牧場"),
+    ENTRY("入帳"),
+    LEDGER("帳簿"),
+    DIARY("日記")
+}
+
+private fun tabDrawable(tab: RanchTab, selected: Boolean): Int = when (tab) {
+    RanchTab.RANCH -> if (selected) R.drawable.tab_ranch_selected else R.drawable.tab_ranch_unselected
+    RanchTab.ENTRY -> if (selected) R.drawable.tab_entry_selected else R.drawable.tab_entry_unselected
+    RanchTab.LEDGER -> if (selected) R.drawable.tab_ledger_selected else R.drawable.tab_ledger_unselected
+    RanchTab.DIARY -> if (selected) R.drawable.tab_diary_selected else R.drawable.tab_diary_unselected
 }
 
 /**
- * 四格獨立木框 Tab＋中央預留＋；選中＝深木＋印章紅底線。
+ * A2c 底欄：四格木鈕 selected／unselected 真圖＋中央＋預留。
  */
 @Composable
 fun RanchBottomBar(
@@ -61,19 +61,18 @@ fun RanchBottomBar(
             .fillMaxWidth()
             .background(Cream)
             .border(1.5.dp, Wood)
-            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .padding(horizontal = 4.dp, vertical = 4.dp)
     ) {
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().height(56.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TabBtn(RanchTab.RANCH, selected == RanchTab.RANCH) { onSelect(RanchTab.RANCH) }
-            TabBtn(RanchTab.ENTRY, selected == RanchTab.ENTRY) { onSelect(RanchTab.ENTRY) }
-            // 中央預留位
+            TabImg(RanchTab.RANCH, selected == RanchTab.RANCH) { onSelect(RanchTab.RANCH) }
+            TabImg(RanchTab.ENTRY, selected == RanchTab.ENTRY) { onSelect(RanchTab.ENTRY) }
             Spacer(Modifier.width(52.dp))
-            TabBtn(RanchTab.LEDGER, selected == RanchTab.LEDGER) { onSelect(RanchTab.LEDGER) }
-            TabBtn(RanchTab.DIARY, selected == RanchTab.DIARY) { onSelect(RanchTab.DIARY) }
+            TabImg(RanchTab.LEDGER, selected == RanchTab.LEDGER) { onSelect(RanchTab.LEDGER) }
+            TabImg(RanchTab.DIARY, selected == RanchTab.DIARY) { onSelect(RanchTab.DIARY) }
         }
         Box(
             Modifier
@@ -92,39 +91,14 @@ fun RanchBottomBar(
 }
 
 @Composable
-private fun TabBtn(tab: RanchTab, selected: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(10.dp)
-    val bg = if (selected) WoodDark else Wood.copy(alpha = 0.75f)
-    Column(
-        Modifier
-            .clip(shape)
-            .background(bg)
-            .border(1.5.dp, if (selected) StampRed else Wood, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painterResource(tab.iconRes),
-            contentDescription = tab.label,
-            modifier = Modifier.size(22.dp),
-            contentScale = ContentScale.Fit
-        )
-        Text(
-            tab.label,
-            color = Cream,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-        )
-        if (selected) {
-            Spacer(Modifier.height(2.dp))
-            Box(
-                Modifier
-                    .width(22.dp)
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(StampRed)
-            )
-        }
-    }
+private fun TabImg(tab: RanchTab, selected: Boolean, onClick: () -> Unit) {
+    Image(
+        painter = painterResource(tabDrawable(tab, selected)),
+        contentDescription = tab.label,
+        modifier = Modifier
+            .width(68.dp)
+            .height(52.dp)
+            .clickable(onClick = onClick),
+        contentScale = ContentScale.Fit
+    )
 }
