@@ -12,6 +12,8 @@ object Routes {
     const val DIARY = "diary"
     const val WEEKLY = "weekly"
     const val SETTINGS = "settings"
+    /** 舊一日循環種田殼（設定進階入口；非預設牧場） */
+    const val LEGACY_FARM = "legacy_farm"
 
     const val HOME = FARM
     const val SETTLE = "settle"

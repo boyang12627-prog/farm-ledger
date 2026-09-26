@@ -51,6 +51,8 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.farmledger.app.R
 import com.farmledger.app.ui.screens.farm.FarmSceneLayer
+import com.farmledger.app.ui.screens.farm.RanchHotspotScene
+import com.farmledger.app.ui.components.RanchTopBar
 import com.farmledger.app.domain.usecase.FarmStageLogic
 import com.farmledger.app.domain.model.RewardRules
 import com.farmledger.app.ui.theme.FarmBg
@@ -99,6 +101,14 @@ class ScreenScreenshotTest {
     fun settle() {
         paparazzi.snapshot(name = "03_settle") {
             FarmLedgerTheme { SettleFixture() }
+        }
+    }
+
+
+    @Test
+    fun ranchA2c() {
+        paparazzi.snapshot(name = "05_ranch_a2c") {
+            FarmLedgerTheme { RanchA2cFixture() }
         }
     }
 
@@ -633,6 +643,41 @@ private fun FarmFixture() {
             }
         }
             }
+        }
+    }
+}
+
+@Composable
+private fun RanchA2cFixture() {
+    // Default ranch path UI tree only — no 起床／物品欄／選擇作物／等待入晝
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFB8D4A8))
+            .padding(4.dp)
+    ) {
+        RanchTopBar(
+            seasonLine = "春・第 3 日",
+            weatherOrPhase = "晝・萌芽",
+            streakDays = 3,
+            seedCoins = 12,
+            hkdMonthSummary = "HK$128.50"
+        )
+        RanchHotspotScene(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            missedCategories = emptySet(),
+            weedStacks = emptyMap(),
+            loggedToday = emptySet(),
+            activeAccountCount = 2,
+            latestSummaries = emptyMap(),
+            onHotspotTap = {}
+        )
+        Row(Modifier.fillMaxWidth()) {
+            TextButton(onClick = {}) { Text("週回顧") }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = {}) { Text("設定") }
         }
     }
 }

@@ -6,10 +6,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -33,7 +36,11 @@ import com.farmledger.app.ui.AppViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: AppViewModel) {
+fun SettingsScreen(
+    vm: AppViewModel,
+    onOpenLegacyFarm: () -> Unit = {},
+    onBack: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val message by vm.message.collectAsState()
@@ -88,13 +95,27 @@ fun SettingsScreen(vm: AppViewModel) {
     Column(
         Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        Row(Modifier.fillMaxWidth()) {
+            TextButton(onClick = onBack) { Text("← 返回") }
+        }
         Text("設定", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text("完全離線・無 INTERNET 權限・無廣告／分析／登入")
-        Text("版本 0.5.1-m5")
+        Text("版本 0.5.4-fix")
+        Spacer(Modifier.height(12.dp))
+        Text("牧場進階", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "舊一日循環（種田／日結／睡覺）已移出主牧場；僅進階使用。",
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedButton(
+            onClick = onOpenLegacyFarm,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("牧場進階／舊農場") }
         Spacer(Modifier.height(16.dp))
 
         Text("帳戶（真港幣・免費唔鎖）", style = MaterialTheme.typography.titleMedium)

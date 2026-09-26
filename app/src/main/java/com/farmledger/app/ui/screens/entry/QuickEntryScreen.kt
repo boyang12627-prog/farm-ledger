@@ -113,14 +113,14 @@ fun QuickEntryScreen(
             .fillMaxSize()
             .background(FarmBg)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
-        // A2 木夾板：entry_clipboard 做背景，保留 Compose 入帳功能
+        // A2 木夾板：fullscreen／近全屏 sheet feel（對齊 a2c_assembled_entry）
         Box(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .border(2.dp, WoodBtnSel, RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(20.dp))
+                .border(3.dp, WoodBtnSel, RoundedCornerShape(20.dp))
         ) {
             Image(
                 painter = painterResource(R.drawable.entry_clipboard),

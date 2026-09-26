@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +30,7 @@ import com.farmledger.app.ui.navigation.Routes
 import com.farmledger.app.ui.screens.diary.DiaryScreen
 import com.farmledger.app.ui.screens.entry.QuickEntryScreen
 import com.farmledger.app.ui.screens.farm.FarmScreen
+import com.farmledger.app.ui.screens.farm.LegacyFarmDayLoopScreen
 import com.farmledger.app.ui.screens.ledger.LedgerScreen
 import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
 import com.farmledger.app.ui.screens.settings.SettingsScreen
@@ -58,7 +63,8 @@ fun FarmLedgerNav(vm: AppViewModel) {
     val showBottom = progress.onboardingDone &&
         route !in listOf(Routes.ONBOARDING) &&
         route != Routes.WEEKLY &&
-        route != Routes.SETTINGS
+        route != Routes.SETTINGS &&
+        route != Routes.LEGACY_FARM
 
     val start = if (progress.onboardingDone) Routes.FARM else Routes.ONBOARDING
 
@@ -79,6 +85,7 @@ fun FarmLedgerNav(vm: AppViewModel) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.statusBars,
         bottomBar = {
             if (showBottom) {
                 RanchBottomBar(
@@ -91,7 +98,8 @@ fun FarmLedgerNav(vm: AppViewModel) {
                             RanchTab.DIARY -> goTab(Routes.DIARY)
                         }
                     },
-                    onCenterFab = { goTab(Routes.ENTRY) }
+                    onCenterFab = { goTab(Routes.ENTRY) },
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
                 )
             }
         }
@@ -145,7 +153,22 @@ fun FarmLedgerNav(vm: AppViewModel) {
                 WeeklyReviewScreen(vm = vm, onBack = { nav.popBackStack() })
             }
             composable(Routes.SETTINGS) {
-                SettingsScreen(vm = vm)
+                SettingsScreen(
+                    vm = vm,
+                    onOpenLegacyFarm = { nav.navigate(Routes.LEGACY_FARM) },
+                    onBack = { nav.popBackStack() }
+                )
+            }
+            composable(Routes.LEGACY_FARM) {
+                LegacyFarmDayLoopScreen(
+                    vm = vm,
+                    onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) },
+                    onOpenEntry = { cat: LedgerCategory? ->
+                        if (cat != null) vm.prefillEntryCategory(cat)
+                        goTab(Routes.ENTRY)
+                    }
+                )
             }
         }
     }
