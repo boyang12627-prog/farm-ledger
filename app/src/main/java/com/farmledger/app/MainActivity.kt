@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,7 +29,10 @@ import androidx.navigation.compose.rememberNavController
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.AppViewModelFactory
 import com.farmledger.app.ui.navigation.Routes
+import com.farmledger.app.ui.screens.diary.DiaryScreen
+import com.farmledger.app.ui.screens.entry.QuickEntryScreen
 import com.farmledger.app.ui.screens.farm.FarmScreen
+import com.farmledger.app.ui.screens.ledger.LedgerScreen
 import com.farmledger.app.ui.screens.onboarding.OnboardingScreen
 import com.farmledger.app.ui.screens.settings.SettingsScreen
 import com.farmledger.app.ui.screens.weekly.WeeklyReviewScreen
@@ -58,9 +63,17 @@ fun FarmLedgerNav(vm: AppViewModel) {
 
     val showBottom = progress.onboardingDone &&
         route !in listOf(Routes.ONBOARDING) &&
-        route != Routes.WEEKLY
+        route != Routes.WEEKLY &&
+        route != Routes.SETTINGS
 
     val start = if (progress.onboardingDone) Routes.FARM else Routes.ONBOARDING
+
+    fun goTab(target: String) {
+        nav.navigate(target) {
+            launchSingleTop = true
+            popUpTo(Routes.FARM) { inclusive = false }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -69,20 +82,27 @@ fun FarmLedgerNav(vm: AppViewModel) {
                 NavigationBar {
                     NavigationBarItem(
                         selected = route == Routes.FARM,
-                        onClick = {
-                            nav.navigate(Routes.FARM) {
-                                launchSingleTop = true
-                                popUpTo(Routes.FARM) { inclusive = false }
-                            }
-                        },
+                        onClick = { goTab(Routes.FARM) },
                         icon = { Icon(Icons.Default.Agriculture, contentDescription = null) },
-                        label = { Text("農場") }
+                        label = { Text("牧場") }
                     )
                     NavigationBarItem(
-                        selected = route == Routes.SETTINGS,
-                        onClick = { nav.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                        label = { Text("設定") }
+                        selected = route == Routes.ENTRY,
+                        onClick = { goTab(Routes.ENTRY) },
+                        icon = { Icon(Icons.Default.EditNote, contentDescription = null) },
+                        label = { Text("入帳") }
+                    )
+                    NavigationBarItem(
+                        selected = route == Routes.LEDGER,
+                        onClick = { goTab(Routes.LEDGER) },
+                        icon = { Icon(Icons.Default.Book, contentDescription = null) },
+                        label = { Text("帳簿") }
+                    )
+                    NavigationBarItem(
+                        selected = route == Routes.DIARY,
+                        onClick = { goTab(Routes.DIARY) },
+                        icon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+                        label = { Text("日記") }
                     )
                 }
             }
@@ -101,6 +121,26 @@ fun FarmLedgerNav(vm: AppViewModel) {
             }
             composable(Routes.FARM) {
                 FarmScreen(
+                    vm = vm,
+                    onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) }
+                )
+            }
+            composable(Routes.ENTRY) {
+                QuickEntryScreen(
+                    vm = vm,
+                    onSaved = { /* stay for more entries */ },
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) }
+                )
+            }
+            composable(Routes.LEDGER) {
+                LedgerScreen(
+                    vm = vm,
+                    onOpenSettings = { nav.navigate(Routes.SETTINGS) }
+                )
+            }
+            composable(Routes.DIARY) {
+                DiaryScreen(
                     vm = vm,
                     onOpenWeekly = { nav.navigate(Routes.WEEKLY) },
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) }

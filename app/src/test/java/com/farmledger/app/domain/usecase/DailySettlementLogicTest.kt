@@ -22,12 +22,14 @@ class DailySettlementLogicTest {
         assertThat(r1.awarded).isTrue()
         assertThat(r1.settlement!!.growthPointsAwarded).isEqualTo(RewardRules.DAILY_GROWTH_POINTS)
         assertThat(r1.progress.growthPoints).isEqualTo(1)
+        assertThat(r1.progress.seedCoins).isEqualTo(base.seedCoins + RewardRules.DAILY_SEED_COINS)
         assertThat(r1.progress.lastSettleDate).isEqualTo("2026-09-15")
 
-        // 同日再結算 → 不發獎（防雙重）
+        // 同日再結算 → 不發獎（防雙重）；種子幣亦不重派
         val r2 = DailySettlementLogic.settle(r1.progress, "2026-09-15", 2_000L, hasAnyLedgerActivity = true)
         assertThat(r2.awarded).isFalse()
         assertThat(r2.progress.growthPoints).isEqualTo(1)
+        assertThat(r2.progress.seedCoins).isEqualTo(r1.progress.seedCoins)
     }
 
     @Test

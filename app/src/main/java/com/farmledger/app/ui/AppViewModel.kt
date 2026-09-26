@@ -47,6 +47,9 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     private val _entries = MutableStateFlow<List<LedgerEntry>>(emptyList())
     val entries: StateFlow<List<LedgerEntry>> = _entries.asStateFlow()
 
+    private val _allEntries = MutableStateFlow<List<LedgerEntry>>(emptyList())
+    val allEntries: StateFlow<List<LedgerEntry>> = _allEntries.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
@@ -64,6 +67,9 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             repo.ensureInventoryStubs()
+            launch {
+                repo.observeAllEntries().collect { _allEntries.value = it }
+            }
             _selectedDate.collect { date ->
                 repo.observeEntries(date).collect { _entries.value = it }
             }
@@ -76,16 +82,26 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
 
     fun setDate(date: String) { _selectedDate.value = date }
 
-    fun addEntry(type: EntryType, amountMinor: Long, note: String) = viewModelScope.launch {
-        repo.addEntry(type, amountMinor, note, _selectedDate.value)
-        _message.value = "已新增帳目"
+    fun addEntry(
+        type: EntryType,
+        amountMinor: Long,
+        note: String,
+        category: String? = null
+    ) = viewModelScope.launch {
+        repo.addEntry(type, amountMinor, note, _selectedDate.value, category = category)
+        _message.value = "已新增港幣帳目"
     }
 
-    fun updateEntry(id: String, type: EntryType, amountMinor: Long, note: String) =
-        viewModelScope.launch {
-            val ok = repo.updateEntry(id, type, amountMinor, note)
-            _message.value = if (ok) "已更新（不會再次發放成長點）" else "更新失敗"
-        }
+    fun updateEntry(
+        id: String,
+        type: EntryType,
+        amountMinor: Long,
+        note: String,
+        category: String? = null
+    ) = viewModelScope.launch {
+        val ok = repo.updateEntry(id, type, amountMinor, note, category = category)
+        _message.value = if (ok) "已更新（不會再次發放成長點／種子幣）" else "更新失敗"
+    }
 
     fun voidEntry(id: String) = viewModelScope.launch {
         repo.voidEntry(id)
@@ -166,7 +182,8 @@ class AppViewModel(private val repo: FarmLedgerRepository) : ViewModel() {
     fun consumeMessage() { _message.value = null }
     fun consumeSettleCeremony() { _settleCeremonyAwarded.value = false }
 
-    fun entryById(id: String): LedgerEntry? = _entries.value.find { it.id == id }
+    fun entryById(id: String): LedgerEntry? =
+        _allEntries.value.find { it.id == id } ?: _entries.value.find { it.id == id }
 }
 
 class AppViewModelFactory(private val repo: FarmLedgerRepository) : ViewModelProvider.Factory {

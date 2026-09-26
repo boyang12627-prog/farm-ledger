@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.EntryType
+import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.theme.FarmText
 
@@ -47,6 +48,11 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
         )
     }
     var note by remember(entryId) { mutableStateOf(existing?.note ?: "") }
+    var category by remember(entryId) {
+        mutableStateOf(
+            LedgerCategory.fromStorage(existing?.category) ?: LedgerCategory.FOOD
+        )
+    }
 
     Column(
         Modifier
@@ -108,10 +114,26 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             }
         }
         if (type != EntryType.NO_TRADE) {
+            Text("分類・${category.farmObjectZh}", color = FarmText, style = MaterialTheme.typography.labelLarge)
+            Row {
+                val cats = if (type == EntryType.INCOME) {
+                    listOf(LedgerCategory.INCOME, LedgerCategory.SAVINGS, LedgerCategory.OTHER)
+                } else {
+                    LedgerCategory.expenseChips
+                }
+                cats.take(5).forEach { c ->
+                    FilterChip(
+                        selected = category == c,
+                        onClick = { category = c },
+                        label = { Text(c.nameZh) },
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                }
+            }
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
-                label = { Text("金額（元）") },
+                label = { Text("金額（港幣）") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -127,10 +149,11 @@ fun EntryEditScreen(vm: AppViewModel, entryId: String?, onDone: () -> Unit) {
             onClick = {
                 val major = amountText.toDoubleOrNull() ?: 0.0
                 val minor = (major * 100).toLong()
+                val catName = if (type == EntryType.NO_TRADE) null else category.name
                 if (existing == null) {
-                    vm.addEntry(type, minor, note)
+                    vm.addEntry(type, minor, note, category = catName)
                 } else {
-                    vm.updateEntry(existing.id, type, minor, note)
+                    vm.updateEntry(existing.id, type, minor, note, category = catName)
                 }
                 onDone()
             },

@@ -10,9 +10,19 @@ data class LedgerEntryEntity(
     val type: String,
     val amountMinor: Long,
     val note: String,
+    val category: String? = null,
+    val accountId: String = "cash",
+    val transferAccountId: String? = null,
     val status: String,
     val createdAtEpochMs: Long,
     val updatedAtEpochMs: Long
+)
+
+@Entity(tableName = "ledger_accounts")
+data class LedgerAccountEntity(
+    @PrimaryKey val id: String,
+    val nameZh: String,
+    val archived: Boolean = false
 )
 
 @Entity(tableName = "daily_settlements")

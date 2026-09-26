@@ -2,17 +2,57 @@ package com.farmledger.app.domain.model
 
 import kotlinx.serialization.Serializable
 
-enum class EntryType { INCOME, EXPENSE, NO_TRADE }
+enum class EntryType { INCOME, EXPENSE, NO_TRADE, TRANSFER }
 
 enum class EntryStatus { ACTIVE, VOIDED }
+
+/** 真港幣分類（≠種子幣）；對應牧場鏡像物件 */
+enum class LedgerCategory(val nameZh: String, val farmObjectZh: String) {
+    FOOD("飲食", "餐桌／灶"),
+    TRANSPORT("交通", "小路／單車架"),
+    HOUSING("住屋", "門廊"),
+    DAILY("日用", "木箱"),
+    ENTERTAINMENT("娛樂", "花圃／魚塘"),
+    HEALTH("健康", "藥草圃"),
+    INCOME("收入", "郵箱／收成籃"),
+    SAVINGS("儲蓄", "撲滿"),
+    OTHER("其他", "告示牌");
+
+    companion object {
+        fun fromStorage(raw: String?): LedgerCategory? =
+            if (raw.isNullOrBlank()) null
+            else entries.find { it.name == raw || it.nameZh == raw }
+
+        /** 常用支出 chips（入帳極速流） */
+        val expenseChips: List<LedgerCategory> =
+            listOf(FOOD, TRANSPORT, HOUSING, DAILY, ENTERTAINMENT, HEALTH, OTHER)
+    }
+}
+
+/** 帳戶 stub（M5 單一預設「現金」；完整多帳戶 UI 之後） */
+@Serializable
+data class LedgerAccount(
+    val id: String,
+    val nameZh: String,
+    val archived: Boolean = false
+)
+
+object DefaultAccounts {
+    const val CASH_ID = "cash"
+    val CASH = LedgerAccount(id = CASH_ID, nameZh = "現金")
+}
 
 @Serializable
 data class LedgerEntry(
     val id: String,
     val localDate: String,           // yyyy-MM-dd
     val type: EntryType,
-    val amountMinor: Long,           // 分/角最小單位；NO_TRADE 為 0
+    val amountMinor: Long,           // 港幣分；NO_TRADE 為 0；≠種子幣
     val note: String = "",
+    val category: String? = null,    // LedgerCategory.name；可空
+    val accountId: String = DefaultAccounts.CASH_ID,
+    /** TRANSFER 時對方帳戶；其他類型為 null */
+    val transferAccountId: String? = null,
     val status: EntryStatus = EntryStatus.ACTIVE,
     val createdAtEpochMs: Long,
     val updatedAtEpochMs: Long
@@ -60,6 +100,8 @@ data class Decoration(
 @Serializable
 data class PlayerProgress(
     val growthPoints: Int = 0,
+    /** 牧場種子幣（≠港幣）；商店買賣只動此欄＋背包 */
+    val seedCoins: Int = 20,
     /** 舊欄位：M2 起種子以 inventory 為準；保留作遷移／相容 */
     val seeds: Int = 3,
     val streakDays: Int = 0,
@@ -109,6 +151,8 @@ object CropTimers {
 
 object RewardRules {
     const val DAILY_GROWTH_POINTS = 1
+    /** 有記／記全日結固定種子幣（唔跟金額／筆數） */
+    const val DAILY_SEED_COINS = 1
     const val WEEKLY_REVIEW_CAP_POINTS = 3
     val STREAK_MILESTONES = listOf(3, 5, 7)
 }
@@ -134,22 +178,34 @@ object InventoryFeedCosts {
     const val FEED_PER_MEAL = 1
 }
 
-/** 商店標價（amountMinor；買賣只寫帳、不發成長點） */
+/**
+ * 牧場內經濟標價（種子幣；≠港幣）。
+ * 買賣只動種子幣／背包，**唔寫**真港幣 ledger_entries，唔發成長點。
+ */
 object ShopCatalog {
-    fun seedBuyPriceMinor(kind: CropKind): Long = when (kind) {
-        CropKind.WHEAT -> 100L
-        CropKind.CARROT -> 150L
-        CropKind.TOMATO -> 200L
+    fun seedBuyPriceCoins(kind: CropKind): Int = when (kind) {
+        CropKind.WHEAT -> 2
+        CropKind.CARROT -> 3
+        CropKind.TOMATO -> 4
     }
 
-    fun cropSellPriceMinor(kind: CropKind): Long = when (kind) {
-        CropKind.WHEAT -> 200L
-        CropKind.CARROT -> 300L
-        CropKind.TOMATO -> 450L
+    fun cropSellPriceCoins(kind: CropKind): Int = when (kind) {
+        CropKind.WHEAT -> 3
+        CropKind.CARROT -> 5
+        CropKind.TOMATO -> 7
     }
 
-    /** 買飼料單價（支出入帳；唔發成長點） */
-    const val FEED_BUY_PRICE_MINOR = 80L
+    /** 買飼料單價（種子幣） */
+    const val FEED_BUY_PRICE_COINS = 2
+
+    @Deprecated("M5：商店唔再用港幣分；請用 seedBuyPriceCoins")
+    fun seedBuyPriceMinor(kind: CropKind): Long = seedBuyPriceCoins(kind).toLong()
+
+    @Deprecated("M5：商店唔再用港幣分；請用 cropSellPriceCoins")
+    fun cropSellPriceMinor(kind: CropKind): Long = cropSellPriceCoins(kind).toLong()
+
+    @Deprecated("M5：請用 FEED_BUY_PRICE_COINS")
+    const val FEED_BUY_PRICE_MINOR = 2L
 }
 
 /** 日內時段（牧場物語式日循環） */

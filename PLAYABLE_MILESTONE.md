@@ -1,56 +1,43 @@
-# Playable Milestone — 農帳養成（Farm Ledger）M4
+# Playable Milestone — 農帳養成（Farm Ledger）M5
 
-可邀請試玩的離線 Debug 里程碑。獎勵規則**未改動**（固定 1 成長點／本地日一次；同日編輯／重結算不重複發獎）。
+可邀請試玩的離線 Debug 里程碑。獎勵規則核心不變（固定成長點／本地日一次；同日編輯／重結算不重複發獎）；M5 另發固定種子幣，且**唔跟金額／筆數**。
 
 ## 基準提交
 
 | 項目 | 值 |
 |------|-----|
-| Commit SHA | `7f91786c252459196840c867e928ec9b7fd409bc`（短：`7f91786`） |
-| 說明 | M4：連續一日生活（起床→勞作→黃昏商店→夜結→瞓覺）＋商店攤位／佈置 |
-| 前身 M3 | `6f0a859`／記錄 `7716944` |
+| Commit SHA | （見 git log／本檔更新後填） |
+| 說明 | M5：真港幣記帳核——拆混帳、四 Tab、入帳／帳簿／日記殼、category／account migration |
+| 前身 M4 | `7f91786`／gate `c5432a7` |
 | 分支 | `main` |
 
-## M4 已落地
+## M5 已落地
 
-- **一日生活閉環**：起床→勞作（種澆收餵）→黃昏商店買賣入帳→夜晚日結→瞓覺過日（`DayLoopLogic` 指引）
-- **商店攤位**：場景 `shop_stall`＋攤主熱區開商店 overlay；黃昏 CTA 強化；UI 格子／標價
-- **佈置**：安家起耗成長點佈置；燈籠／花箱／告示／稻草人 sprite
-- **保留**：夜結儀式、背包飼料餵食、種／澆／收、固定 1 點／日
-- **反濫用**：結算仍固定 1 點／日；睡覺／等待／買賣／編輯／餵食／佈置不發獎
+- **拆混帳**：商店買種子／賣收成／買飼料只動種子幣＋背包，**唔再寫** `ledger_entries`
+- **Schema v3**：`category`、`accountId`、`transferAccountId`；`TRANSFER` 類型；帳戶表 stub「現金」；Room `MIGRATION_2_3`
+- **底欄**：牧場｜入帳｜帳簿｜日記（設定改為次入口）
+- **入帳**：預設支出＋分類 chips→金額→儲存（港幣 `amountMinor`）
+- **帳簿**：跨日列表＋備註／金額搜尋；編輯／作廢
+- **日記殼**：今日有記／未記、漏記分類長草標記、週回顧入口
+- **日結**：有記→固定 1 成長點＋1 種子幣；改帳唔重派
 
-## 驗證結果
-
-### 1. 離線權限
-
-`AndroidManifest.xml` **沒有**宣告 `INTERNET`。
-
-### 2. 建置與測試
+## 驗證
 
 ```bash
-./gradlew :app:testDebugUnitTest :app:assembleDebug
+./gradlew :app:testDebugUnitTest
+# 可選
+./gradlew :app:assembleDebug
 ```
 
-- **單元測試**：結算 + 日循環 + 一日指引 + 背包／買賣／飼料 + 種澆收＋餵食＋階段佈置
-- **Debug APK**：`app/build/outputs/apk/debug/app-debug.apk`
+## 獎勵規則
 
-### 3. 獎勵規則（不變）
-
-- 每日結算：固定 1 成長點／本地日一次
+- 每日結算：固定 1 成長點＋1 種子幣／本地日一次（有記／記全）
 - 同日再結算／編輯：不重複發獎
-- 金額／筆數／買賣／餵食／佈置／睡覺：不影響成長點發放
-- 時鐘倒退：暫停獎勵，不刪帳本
-
-## 安裝
-
-見 [README.md](README.md)。建議：
-
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+- 金額／筆數／商店買賣／餵食／佈置／睡覺：不影響成長點發放量
+- 商店＝牧場內經濟（種子幣 ≠ 港幣）
 
 ## 基準提交記錄
 
+- M5 真港幣記帳核：（commit 後填）
 - M4 day-loop + shop stall：`7f91786`（2026-09-22）
 - M3 night-settle + inventory feed：`6f0a859`（2026-09-22）
-- M2 art+inventory：`393f781`（2026-09-22）

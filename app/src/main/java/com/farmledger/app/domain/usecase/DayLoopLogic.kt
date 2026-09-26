@@ -5,7 +5,7 @@ import com.farmledger.app.domain.model.DayPhase
 /**
  * M4 一日生活節奏指引（純 UI／流程建議；唔改結算發獎）。
  *
- * 起床 → 勞作（種澆收餵）→ 黃昏商店買賣入帳 → 夜晚日結 → 瞓覺過日
+ * 起床 → 勞作（種澆收餵）→ 黃昏商店（種子幣；唔入港幣帳）→ 夜晚日結 → 瞓覺過日
  * 睡覺／等待從不發成長點；日結仍固定 1 點／本地日一次（見 DailySettlementLogic）。
  */
 enum class DayLoopFocus(val nameZh: String) {
@@ -44,14 +44,14 @@ object DayLoopLogic {
         DayPhase.EVENING -> DayLoopGuide(
             focus = DayLoopFocus.SHOP,
             titleZh = "黃昏商店",
-            hintZh = "買種子／飼料＝支出、賣收成＝收入；入帳唔發成長點。",
+            hintZh = "種子幣買種子／飼料、賣收成；唔入真港幣帳、唔發成長點。",
             primaryCtaZh = "開商店"
         )
         DayPhase.NIGHT -> if (!todaySettled) {
             DayLoopGuide(
                 focus = DayLoopFocus.SETTLE,
                 titleZh = "夜晚・日結",
-                hintZh = "有帳本活動就可結算：固定 1 成長點／日；改帳唔重派。",
+                hintZh = "有記（真帳／無交易日）可結算：固定 1 成長點＋1 種子幣；改帳唔重派。",
                 primaryCtaZh = "去日結"
             )
         } else {

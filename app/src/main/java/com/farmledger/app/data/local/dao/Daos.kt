@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.farmledger.app.data.local.entity.DailySettlementEntity
 import com.farmledger.app.data.local.entity.GameDayStateEntity
 import com.farmledger.app.data.local.entity.InventoryItemEntity
+import com.farmledger.app.data.local.entity.LedgerAccountEntity
 import com.farmledger.app.data.local.entity.LedgerEntryEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -15,6 +16,9 @@ import kotlinx.coroutines.flow.Flow
 interface LedgerDao {
     @Query("SELECT * FROM ledger_entries WHERE localDate = :date ORDER BY createdAtEpochMs DESC")
     fun observeByDate(date: String): Flow<List<LedgerEntryEntity>>
+
+    @Query("SELECT * FROM ledger_entries ORDER BY localDate DESC, createdAtEpochMs DESC")
+    fun observeAll(): Flow<List<LedgerEntryEntity>>
 
     @Query("SELECT * FROM ledger_entries WHERE localDate = :date ORDER BY createdAtEpochMs DESC")
     suspend fun getByDate(date: String): List<LedgerEntryEntity>
@@ -36,6 +40,24 @@ interface LedgerDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(entries: List<LedgerEntryEntity>)
+}
+
+@Dao
+interface AccountDao {
+    @Query("SELECT * FROM ledger_accounts ORDER BY id")
+    fun observeAll(): Flow<List<LedgerAccountEntity>>
+
+    @Query("SELECT * FROM ledger_accounts ORDER BY id")
+    suspend fun getAll(): List<LedgerAccountEntity>
+
+    @Query("SELECT * FROM ledger_accounts WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): LedgerAccountEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: LedgerAccountEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(entity: LedgerAccountEntity): Long
 }
 
 @Dao

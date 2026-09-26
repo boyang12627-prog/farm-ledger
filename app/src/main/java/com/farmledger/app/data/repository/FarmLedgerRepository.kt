@@ -1,15 +1,20 @@
 package com.farmledger.app.data.repository
 
+import com.farmledger.app.data.local.dao.AccountDao
 import com.farmledger.app.data.local.dao.GameDayDao
 import com.farmledger.app.data.local.dao.InventoryDao
 import com.farmledger.app.data.local.dao.LedgerDao
 import com.farmledger.app.data.local.dao.SettlementDao
 import com.farmledger.app.data.local.datastore.GamePreferences
 import com.farmledger.app.data.local.entity.DailySettlementEntity
+import com.farmledger.app.data.local.entity.LedgerAccountEntity
 import com.farmledger.app.data.local.entity.GameDayStateEntity
 import com.farmledger.app.data.local.entity.InventoryItemEntity
 import com.farmledger.app.data.local.entity.LedgerEntryEntity
 import com.farmledger.app.domain.model.CropKind
+import com.farmledger.app.domain.model.DefaultAccounts
+import com.farmledger.app.domain.model.LedgerAccount
+import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.model.DailySettlement
 import com.farmledger.app.domain.model.DayPhase
 import com.farmledger.app.domain.model.Decoration
@@ -45,6 +50,7 @@ import java.util.UUID
 
 class FarmLedgerRepository(
     private val ledgerDao: LedgerDao,
+    private val accountDao: AccountDao,
     private val settlementDao: SettlementDao,
     private val gameDayDao: GameDayDao,
     private val inventoryDao: InventoryDao,
@@ -68,6 +74,23 @@ class FarmLedgerRepository(
 
     fun observeEntries(date: String): Flow<List<LedgerEntry>> =
         ledgerDao.observeByDate(date).map { list -> list.map { it.toDomain() } }
+
+    fun observeAllEntries(): Flow<List<LedgerEntry>> =
+        ledgerDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    val accountsFlow: Flow<List<LedgerAccount>> = accountDao.observeAll().map { list ->
+        list.map { it.toDomain() }
+    }
+
+    suspend fun ensureDefaultAccount() {
+        accountDao.insertIgnore(
+            LedgerAccountEntity(
+                id = DefaultAccounts.CASH_ID,
+                nameZh = DefaultAccounts.CASH.nameZh,
+                archived = false
+            )
+        )
+    }
 
     suspend fun syncClock(today: String = LocalDate.now().toString()) {
         val p = prefs.progressFlow.first()
@@ -133,6 +156,7 @@ class FarmLedgerRepository(
      * 買賣／種植／收成皆經背包；數量唔發成長點。
      */
     suspend fun ensureInventoryStubs() {
+        ensureDefaultAccount()
         val now = System.currentTimeMillis()
         val existing = inventoryDao.getAll().map { it.toDomain() }
         val progress = prefs.progressFlow.first()
@@ -192,16 +216,29 @@ class FarmLedgerRepository(
         type: EntryType,
         amountMinor: Long,
         note: String,
-        localDate: String = LocalDate.now().toString()
+        localDate: String = LocalDate.now().toString(),
+        category: String? = null,
+        accountId: String = DefaultAccounts.CASH_ID,
+        transferAccountId: String? = null
     ): LedgerEntry {
+        ensureDefaultAccount()
         val now = System.currentTimeMillis()
         val amt = if (type == EntryType.NO_TRADE) 0L else amountMinor.coerceAtLeast(0)
+        val cat = when {
+            type == EntryType.NO_TRADE -> null
+            !category.isNullOrBlank() -> category
+            type == EntryType.INCOME -> LedgerCategory.INCOME.name
+            else -> LedgerCategory.OTHER.name
+        }
         val entry = LedgerEntry(
             id = UUID.randomUUID().toString(),
             localDate = localDate,
             type = type,
             amountMinor = amt,
             note = note,
+            category = cat,
+            accountId = accountId.ifBlank { DefaultAccounts.CASH_ID },
+            transferAccountId = if (type == EntryType.TRANSFER) transferAccountId else null,
             status = EntryStatus.ACTIVE,
             createdAtEpochMs = now,
             updatedAtEpochMs = now
@@ -210,7 +247,15 @@ class FarmLedgerRepository(
         return entry
     }
 
-    suspend fun updateEntry(id: String, type: EntryType, amountMinor: Long, note: String): Boolean {
+    suspend fun updateEntry(
+        id: String,
+        type: EntryType,
+        amountMinor: Long,
+        note: String,
+        category: String? = null,
+        accountId: String? = null,
+        transferAccountId: String? = null
+    ): Boolean {
         val existing = ledgerDao.getById(id) ?: return false
         if (existing.status == EntryStatus.VOIDED.name) return false
         val amt = if (type == EntryType.NO_TRADE) 0L else amountMinor.coerceAtLeast(0)
@@ -219,6 +264,11 @@ class FarmLedgerRepository(
                 type = type.name,
                 amountMinor = amt,
                 note = note,
+                category = category ?: existing.category,
+                accountId = accountId ?: existing.accountId,
+                transferAccountId = if (type == EntryType.TRANSFER) {
+                    transferAccountId ?: existing.transferAccountId
+                } else null,
                 updatedAtEpochMs = System.currentTimeMillis()
             )
         )
@@ -345,45 +395,56 @@ class FarmLedgerRepository(
     }
 
     /**
-     * 買種子：經背包入庫並寫支出帳。金額／筆數唔發成長點。
+     * 買種子：經背包入庫、扣種子幣。**唔寫**真港幣帳；唔發成長點。
      */
     suspend fun buySeeds(crop: CropKind, quantity: Int = 1): String {
         syncClock()
         ensureInventoryStubs()
         val now = System.currentTimeMillis()
-        val inv = loadInventory(now)
-        val trade = InventoryLogic.buySeeds(inv, crop, quantity, now)
-        if (!trade.ok || trade.entryType == null) return trade.msg
-        saveInventory(trade.inventory)
         val progress = prefs.progressFlow.first()
-        prefs.saveProgress(progress.copy(seeds = InventoryLogic.totalSeeds(trade.inventory)))
-        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        val inv = loadInventory(now)
+        val trade = InventoryLogic.buySeeds(inv, crop, quantity, now, progress.seedCoins)
+        if (!trade.ok) return trade.msg
+        saveInventory(trade.inventory)
+        prefs.saveProgress(
+            progress.copy(
+                seedCoins = progress.seedCoins + trade.seedCoinDelta,
+                seeds = InventoryLogic.totalSeeds(trade.inventory)
+            )
+        )
         return trade.msg
     }
 
     /**
-     * 賣收成：經背包出庫並寫收入帳。金額／筆數唔發成長點。
+     * 賣收成：經背包出庫、加種子幣。**唔寫**真港幣帳；唔發成長點。
      */
     suspend fun sellHarvest(crop: CropKind, quantity: Int = 1): String {
         syncClock()
         ensureInventoryStubs()
         val now = System.currentTimeMillis()
-        val inv = loadInventory(now)
-        val trade = InventoryLogic.sellHarvest(inv, crop, quantity, now)
-        if (!trade.ok || trade.entryType == null) return trade.msg
+        val trade = InventoryLogic.sellHarvest(loadInventory(now), crop, quantity, now)
+        if (!trade.ok) return trade.msg
         saveInventory(trade.inventory)
-        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        val progress = prefs.progressFlow.first()
+        prefs.saveProgress(
+            progress.copy(
+                seedCoins = progress.seedCoins + trade.seedCoinDelta,
+                seeds = InventoryLogic.totalSeeds(trade.inventory)
+            )
+        )
         return trade.msg
     }
 
+    /** 買飼料：入庫＋扣種子幣。**唔寫**真港幣帳。 */
     suspend fun buyFeed(quantity: Int = 1): String {
         ensureInventoryStubs()
         syncClock()
         val now = System.currentTimeMillis()
-        val trade = InventoryLogic.buyFeed(loadInventory(now), quantity, now)
-        if (!trade.ok || trade.entryType == null) return trade.msg
+        val progress = prefs.progressFlow.first()
+        val trade = InventoryLogic.buyFeed(loadInventory(now), quantity, now, progress.seedCoins)
+        if (!trade.ok) return trade.msg
         saveInventory(trade.inventory)
-        addEntry(trade.entryType, trade.amountMinor, trade.note)
+        prefs.saveProgress(progress.copy(seedCoins = progress.seedCoins + trade.seedCoinDelta))
         return trade.msg
     }
 
@@ -511,16 +572,36 @@ class FarmLedgerRepository(
             val entries = dataLines.mapNotNull { line ->
                 val parts = parseCsvLine(line)
                 if (parts.size < 8) return@mapNotNull null
-                LedgerEntryEntity(
-                    id = parts[0],
-                    localDate = parts[1],
-                    type = parts[2],
-                    amountMinor = parts[3].toLongOrNull() ?: 0L,
-                    note = parts[4],
-                    status = parts[5],
-                    createdAtEpochMs = parts[6].toLongOrNull() ?: 0L,
-                    updatedAtEpochMs = parts[7].toLongOrNull() ?: 0L
-                )
+                if (parts.size >= 11) {
+                    LedgerEntryEntity(
+                        id = parts[0],
+                        localDate = parts[1],
+                        type = parts[2],
+                        amountMinor = parts[3].toLongOrNull() ?: 0L,
+                        note = parts[4],
+                        category = parts[5].ifBlank { null },
+                        accountId = parts[6].ifBlank { DefaultAccounts.CASH_ID },
+                        transferAccountId = parts[7].ifBlank { null },
+                        status = parts[8],
+                        createdAtEpochMs = parts[9].toLongOrNull() ?: 0L,
+                        updatedAtEpochMs = parts[10].toLongOrNull() ?: 0L
+                    )
+                } else {
+                    // 舊 8 欄 CSV
+                    LedgerEntryEntity(
+                        id = parts[0],
+                        localDate = parts[1],
+                        type = parts[2],
+                        amountMinor = parts[3].toLongOrNull() ?: 0L,
+                        note = parts[4],
+                        category = null,
+                        accountId = DefaultAccounts.CASH_ID,
+                        transferAccountId = null,
+                        status = parts[5],
+                        createdAtEpochMs = parts[6].toLongOrNull() ?: 0L,
+                        updatedAtEpochMs = parts[7].toLongOrNull() ?: 0L
+                    )
+                }
             }
             ledgerDao.upsertAll(entries)
             "CSV 匯入成功：${entries.size} 筆。"
@@ -566,13 +647,35 @@ data class ExportBundle(
 )
 
 private fun LedgerEntryEntity.toDomain() = LedgerEntry(
-    id, localDate, EntryType.valueOf(type), amountMinor, note,
-    EntryStatus.valueOf(status), createdAtEpochMs, updatedAtEpochMs
+    id = id,
+    localDate = localDate,
+    type = runCatching { EntryType.valueOf(type) }.getOrDefault(EntryType.EXPENSE),
+    amountMinor = amountMinor,
+    note = note,
+    category = category,
+    accountId = accountId.ifBlank { DefaultAccounts.CASH_ID },
+    transferAccountId = transferAccountId,
+    status = runCatching { EntryStatus.valueOf(status) }.getOrDefault(EntryStatus.ACTIVE),
+    createdAtEpochMs = createdAtEpochMs,
+    updatedAtEpochMs = updatedAtEpochMs
 )
 
 private fun LedgerEntry.toEntity() = LedgerEntryEntity(
-    id, localDate, type.name, amountMinor, note, status.name, createdAtEpochMs, updatedAtEpochMs
+    id = id,
+    localDate = localDate,
+    type = type.name,
+    amountMinor = amountMinor,
+    note = note,
+    category = category,
+    accountId = accountId.ifBlank { DefaultAccounts.CASH_ID },
+    transferAccountId = transferAccountId,
+    status = status.name,
+    createdAtEpochMs = createdAtEpochMs,
+    updatedAtEpochMs = updatedAtEpochMs
 )
+
+private fun LedgerAccountEntity.toDomain() = LedgerAccount(id, nameZh, archived)
+private fun LedgerAccount.toEntity() = LedgerAccountEntity(id, nameZh, archived)
 
 private fun DailySettlementEntity.toDomain() = DailySettlement(localDate, growthPointsAwarded, settledAtEpochMs)
 private fun DailySettlement.toEntity() = DailySettlementEntity(localDate, growthPointsAwarded, settledAtEpochMs)

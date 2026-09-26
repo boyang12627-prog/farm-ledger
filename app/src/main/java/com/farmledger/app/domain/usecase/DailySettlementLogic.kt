@@ -84,6 +84,7 @@ object DailySettlementLogic {
         }
 
         val points = RewardRules.DAILY_GROWTH_POINTS
+        val seedCoinsAward = RewardRules.DAILY_SEED_COINS
         val settlement = DailySettlement(
             localDate = today,
             growthPointsAwarded = points,
@@ -91,6 +92,7 @@ object DailySettlementLogic {
         )
         val updated = progress.copy(
             growthPoints = progress.growthPoints + points,
+            seedCoins = progress.seedCoins + seedCoinsAward,
             seeds = progress.seeds + seedsBonus,
             streakDays = newStreak,
             totalSettleDays = progress.totalSettleDays + 1,
@@ -102,8 +104,8 @@ object DailySettlementLogic {
             progress = updated,
             settlement = settlement,
             awarded = true,
-            messageZh = "結算成功！獲得 $points 成長點" +
-                if (seedsBonus > 0) "，連續 $newStreak 日獎勵種子 +$seedsBonus" else "（連續 $newStreak 日）"
+            messageZh = "結算成功！獲得 $points 成長點＋$seedCoinsAward 種子幣" +
+                if (seedsBonus > 0) "，連續 $newStreak 日獎勵種子 +$seedsBonus" else "（連續 $newStreak 日；改帳唔重派）"
         )
     }
 

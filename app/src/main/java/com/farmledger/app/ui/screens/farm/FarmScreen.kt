@@ -200,6 +200,14 @@ fun FarmScreen(
                 Text(" $seedTotal", color = FarmText)
                 Spacer(Modifier.size(6.dp))
                 Image(
+                    painterResource(R.drawable.ic_coin_plus),
+                    contentDescription = "種子幣",
+                    modifier = Modifier.size(20.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Text(" ${progress.seedCoins}", color = FarmText, style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.size(6.dp))
+                Image(
                     painterResource(R.drawable.ic_sell_basket),
                     contentDescription = "收成",
                     modifier = Modifier.size(20.dp),
@@ -277,7 +285,7 @@ fun FarmScreen(
                     contentScale = ContentScale.FillBounds
                 )
                 Spacer(Modifier.size(4.dp))
-                Text("記帳")
+                Text("今日帳")
             }
             val settlePrimary = DayLoopLogic.isSettlePreferred(gameDay.phase) && !todaySettled
             Button(
@@ -745,6 +753,7 @@ private fun ShopOverlayContent(
     onClose: () -> Unit
 ) {
     val inventory by vm.inventory.collectAsState()
+    val progress by vm.progress.collectAsState()
     val message by vm.message.collectAsState()
     Column(
         Modifier
@@ -775,10 +784,16 @@ private fun ShopOverlayContent(
                     color = FarmText
                 )
                 Text(
-                    if (phase == DayPhase.EVENING) "一日節奏：買賣入帳（唔發成長點）"
+                    if (phase == DayPhase.EVENING) "一日節奏：牧場買賣（種子幣；唔入真帳）"
                     else "隨時可買；黃昏最合適。",
                     style = MaterialTheme.typography.bodySmall,
                     color = FarmSoil
+                )
+                Text(
+                    "種子幣 ${progress.seedCoins}（≠港幣）",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = FarmText,
+                    fontWeight = FontWeight.Bold
                 )
             }
             Image(
@@ -790,7 +805,7 @@ private fun ShopOverlayContent(
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            "買種子／飼料＝支出、賣收成＝收入；金額唔發成長點。必須經背包。",
+            "牧場內經濟：種子幣買賣，唔入真港幣帳；唔發成長點。必須經背包。",
             style = MaterialTheme.typography.bodySmall,
             color = FarmSoil
         )
@@ -813,7 +828,7 @@ private fun ShopOverlayContent(
             )
         }
         CropKind.entries.forEach { crop ->
-            val price = ShopCatalog.seedBuyPriceMinor(crop)
+            val price = ShopCatalog.seedBuyPriceCoins(crop)
             val have = InventoryLogic.seedQty(inventory, crop)
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -837,7 +852,7 @@ private fun ShopOverlayContent(
                     }
                     Spacer(Modifier.size(6.dp))
                     Text(
-                        "${FarmLogic.cropZh(crop)}種子 · ${(price / 100.0)}／袋 · 有 $have",
+                        "${FarmLogic.cropZh(crop)}種子 · $price 種子幣／袋 · 有 $have",
                         color = FarmText
                     )
                 }
@@ -865,7 +880,7 @@ private fun ShopOverlayContent(
             Text("買飼料", fontWeight = FontWeight.Bold, color = FarmText)
         }
         run {
-            val price = ShopCatalog.FEED_BUY_PRICE_MINOR
+            val price = ShopCatalog.FEED_BUY_PRICE_COINS
             val have = InventoryLogic.feedQty(inventory)
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -881,7 +896,7 @@ private fun ShopOverlayContent(
                     )
                     Spacer(Modifier.size(6.dp))
                     Text(
-                        "飼料 · ${(price / 100.0)}／袋 · 有 $have",
+                        "飼料 · $price 種子幣／袋 · 有 $have",
                         color = FarmText
                     )
                 }
@@ -909,7 +924,7 @@ private fun ShopOverlayContent(
             Text("賣收成", fontWeight = FontWeight.Bold, color = FarmText)
         }
         CropKind.entries.forEach { crop ->
-            val price = ShopCatalog.cropSellPriceMinor(crop)
+            val price = ShopCatalog.cropSellPriceCoins(crop)
             val have = InventoryLogic.cropQty(inventory, crop)
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -933,7 +948,7 @@ private fun ShopOverlayContent(
                     }
                     Spacer(Modifier.size(6.dp))
                     Text(
-                        "${FarmLogic.cropZh(crop)} · ${(price / 100.0)}／個 · 有 $have",
+                        "${FarmLogic.cropZh(crop)} · $price 種子幣／個 · 有 $have",
                         color = FarmText
                     )
                 }
@@ -1034,7 +1049,7 @@ private fun LedgerOverlayContent(
             }
         }
         if (entries.isEmpty()) {
-            Text("尚無紀錄。可記一筆、買種子或標記無交易日後結算。", color = FarmSoil)
+            Text("尚無港幣帳。請去「入帳」記真帳，或標記無交易日後結算。商店買賣唔入真帳。", color = FarmSoil)
         }
         Spacer(Modifier.height(24.dp))
     }

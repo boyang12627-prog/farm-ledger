@@ -2,7 +2,6 @@ package com.farmledger.app.domain.usecase
 
 import com.farmledger.app.domain.model.CropKind
 import com.farmledger.app.domain.model.CropTimers
-import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.InventoryItem
 import com.farmledger.app.domain.model.InventoryItemKind
 import com.farmledger.app.domain.model.ShopCatalog
@@ -14,14 +13,13 @@ data class InventoryMutation(
 )
 
 /**
- * 買賣結果：只改背包＋產生帳本草稿（種類／金額／備註）。
- * **不發成長點**——成長點只由每日結算發放。
+ * 牧場買賣結果：只改背包＋種子幣增量。
+ * **唔寫真港幣帳**、**不發成長點**——成長點只由每日結算發放。
  */
 data class TradeResult(
     val inventory: List<InventoryItem>,
-    val entryType: EntryType?,
-    val amountMinor: Long,
-    val note: String,
+    /** 種子幣變動：買為負、賣為正；唔入 ledger_entries */
+    val seedCoinDelta: Int,
     val ok: Boolean,
     val msg: String
 )
@@ -108,37 +106,43 @@ object InventoryLogic {
     }
 
     /**
-     * 買種子：必須先入庫；寫支出帳（金額不發成長點）。
+     * 買種子：入庫；扣種子幣（唔寫港幣帳、唔發成長點）。
+     * @param seedCoins 當前種子幣（由 repository 傳入檢查）
      */
     fun buySeeds(
         inventory: List<InventoryItem>,
         crop: CropKind,
         quantity: Int,
-        nowEpochMs: Long
+        nowEpochMs: Long,
+        seedCoins: Int
     ): TradeResult {
         if (quantity <= 0) {
-            return TradeResult(inventory, null, 0, "", false, "購買數量須為正。")
+            return TradeResult(inventory, 0, false, "購買數量須為正。")
         }
-        val unit = ShopCatalog.seedBuyPriceMinor(crop)
+        val unit = ShopCatalog.seedBuyPriceCoins(crop)
         val total = unit * quantity
+        if (seedCoins < total) {
+            return TradeResult(
+                inventory, 0, false,
+                "種子幣不足（有 $seedCoins，需要 $total）。牧場內經濟，唔入真帳。"
+            )
+        }
         val kind = InventoryItemKind.seedOf(crop)
         val added = add(inventory, kind, quantity, nowEpochMs)
         if (!added.ok) {
-            return TradeResult(inventory, null, 0, "", false, added.msg)
+            return TradeResult(inventory, 0, false, added.msg)
         }
         val note = "買${FarmLogic.cropZh(crop)}種子 ×$quantity"
         return TradeResult(
             inventory = added.inventory,
-            entryType = EntryType.EXPENSE,
-            amountMinor = total,
-            note = note,
+            seedCoinDelta = -total,
             ok = true,
-            msg = "已買入$note（支出 ${(total / 100.0)}；唔發成長點）"
+            msg = "已買入$note（−$total 種子幣；牧場經濟，唔入港幣帳、唔發成長點）"
         )
     }
 
     /**
-     * 賣收成：必須先有收成堆疊；寫收入帳（金額不發成長點）。
+     * 賣收成：出庫；加種子幣（唔寫港幣帳、唔發成長點）。
      */
     fun sellHarvest(
         inventory: List<InventoryItem>,
@@ -147,51 +151,54 @@ object InventoryLogic {
         nowEpochMs: Long
     ): TradeResult {
         if (quantity <= 0) {
-            return TradeResult(inventory, null, 0, "", false, "出售數量須為正。")
+            return TradeResult(inventory, 0, false, "出售數量須為正。")
         }
         val kind = InventoryItemKind.cropOf(crop)
         val removed = remove(inventory, kind, quantity, nowEpochMs)
         if (!removed.ok) {
-            return TradeResult(inventory, null, 0, "", false, removed.msg)
+            return TradeResult(inventory, 0, false, removed.msg)
         }
-        val unit = ShopCatalog.cropSellPriceMinor(crop)
+        val unit = ShopCatalog.cropSellPriceCoins(crop)
         val total = unit * quantity
         val note = "賣${FarmLogic.cropZh(crop)} ×$quantity"
         return TradeResult(
             inventory = removed.inventory,
-            entryType = EntryType.INCOME,
-            amountMinor = total,
-            note = note,
+            seedCoinDelta = total,
             ok = true,
-            msg = "已售出$note（收入 ${(total / 100.0)}；唔發成長點）"
+            msg = "已售出$note（＋$total 種子幣；牧場經濟，唔入港幣帳、唔發成長點）"
         )
     }
 
     /**
-     * 買飼料：入庫 FEED；寫支出帳（金額不發成長點）。
+     * 買飼料：入庫 FEED；扣種子幣（唔寫港幣帳）。
      */
     fun buyFeed(
         inventory: List<InventoryItem>,
         quantity: Int,
-        nowEpochMs: Long
+        nowEpochMs: Long,
+        seedCoins: Int
     ): TradeResult {
         if (quantity <= 0) {
-            return TradeResult(inventory, null, 0, "", false, "購買數量須為正。")
+            return TradeResult(inventory, 0, false, "購買數量須為正。")
         }
-        val unit = ShopCatalog.FEED_BUY_PRICE_MINOR
+        val unit = ShopCatalog.FEED_BUY_PRICE_COINS
         val total = unit * quantity
+        if (seedCoins < total) {
+            return TradeResult(
+                inventory, 0, false,
+                "種子幣不足（有 $seedCoins，需要 $total）。牧場內經濟，唔入真帳。"
+            )
+        }
         val added = add(inventory, InventoryItemKind.FEED, quantity, nowEpochMs)
         if (!added.ok) {
-            return TradeResult(inventory, null, 0, "", false, added.msg)
+            return TradeResult(inventory, 0, false, added.msg)
         }
         val note = "買飼料 ×$quantity"
         return TradeResult(
             inventory = added.inventory,
-            entryType = EntryType.EXPENSE,
-            amountMinor = total,
-            note = note,
+            seedCoinDelta = -total,
             ok = true,
-            msg = "已買入$note（支出 ${(total / 100.0)}；唔發成長點）"
+            msg = "已買入$note（−$total 種子幣；牧場經濟，唔入港幣帳、唔發成長點）"
         )
     }
 

@@ -10,6 +10,7 @@ class AppContainer(context: Context) {
     private val prefs = GamePreferences(context)
     val repository = FarmLedgerRepository(
         ledgerDao = db.ledgerDao(),
+        accountDao = db.accountDao(),
         settlementDao = db.settlementDao(),
         gameDayDao = db.gameDayDao(),
         inventoryDao = db.inventoryDao(),
