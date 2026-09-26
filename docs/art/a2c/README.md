@@ -38,7 +38,7 @@
 | `savings_piggy` | 儲蓄 | 撲滿 |
 | `other_notice` | 其他 | 告示牌 |
 
-三態：`idle` 靜置｜`pressed` 按下（略暗下壓）｜`hasEntry` 今日已記（印章紅圈＋芽章）。
+三態：`idle` 靜置｜`pressed` 按下（略暗下壓）｜`active`／`hasEntry` 今日已記（印章紅圈＋芽章；兩檔等同）。錨點對齊 `hotspot_map.json`（同 a2）。
 
 漏記草：依連續漏記日數疊 `grass_layer_1` → `+2` → `+3`（可半透明）。
 

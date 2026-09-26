@@ -1,0 +1,144 @@
+{
+  "version": "A2c",
+  "ranch_asset": "ranch/spring_ranch_base.png",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "source_coords": "docs/art/a2/hotspot_map.json",
+  "states": [
+    "idle",
+    "pressed",
+    "active"
+  ],
+  "state_note": "active == hasEntry（今日有記）；檔名 *_active.png 同 *_hasEntry.png 等同",
+  "float_frame": "sheets/floating_wood_sign.png",
+  "hotspots_normalized": [
+    {
+      "id": "food",
+      "category": "飲食",
+      "object": "餐桌灶",
+      "fx": 0.42,
+      "fy": 0.4,
+      "sprite": "food_table",
+      "files": {
+        "idle": "hotspots/food_table_idle.png",
+        "pressed": "hotspots/food_table_pressed.png",
+        "active": "hotspots/food_table_active.png",
+        "hasEntry": "hotspots/food_table_hasEntry.png"
+      }
+    },
+    {
+      "id": "transit",
+      "category": "交通",
+      "object": "小路單車",
+      "fx": 0.28,
+      "fy": 0.48,
+      "sprite": "transport_bike",
+      "files": {
+        "idle": "hotspots/transport_bike_idle.png",
+        "pressed": "hotspots/transport_bike_pressed.png",
+        "active": "hotspots/transport_bike_active.png",
+        "hasEntry": "hotspots/transport_bike_hasEntry.png"
+      }
+    },
+    {
+      "id": "home",
+      "category": "住屋",
+      "object": "門廊",
+      "fx": 0.55,
+      "fy": 0.36,
+      "sprite": "housing_porch",
+      "files": {
+        "idle": "hotspots/housing_porch_idle.png",
+        "pressed": "hotspots/housing_porch_pressed.png",
+        "active": "hotspots/housing_porch_active.png",
+        "hasEntry": "hotspots/housing_porch_hasEntry.png"
+      }
+    },
+    {
+      "id": "daily",
+      "category": "日用",
+      "object": "木箱",
+      "fx": 0.22,
+      "fy": 0.5,
+      "sprite": "daily_crates",
+      "files": {
+        "idle": "hotspots/daily_crates_idle.png",
+        "pressed": "hotspots/daily_crates_pressed.png",
+        "active": "hotspots/daily_crates_active.png",
+        "hasEntry": "hotspots/daily_crates_hasEntry.png"
+      }
+    },
+    {
+      "id": "fun",
+      "category": "娛樂",
+      "object": "花圃魚塘",
+      "fx": 0.18,
+      "fy": 0.72,
+      "sprite": "fun_garden_pond",
+      "files": {
+        "idle": "hotspots/fun_garden_pond_idle.png",
+        "pressed": "hotspots/fun_garden_pond_pressed.png",
+        "active": "hotspots/fun_garden_pond_active.png",
+        "hasEntry": "hotspots/fun_garden_pond_hasEntry.png"
+      }
+    },
+    {
+      "id": "health",
+      "category": "健康",
+      "object": "藥草",
+      "fx": 0.3,
+      "fy": 0.62,
+      "sprite": "health_herbs",
+      "files": {
+        "idle": "hotspots/health_herbs_idle.png",
+        "pressed": "hotspots/health_herbs_pressed.png",
+        "active": "hotspots/health_herbs_active.png",
+        "hasEntry": "hotspots/health_herbs_hasEntry.png"
+      }
+    },
+    {
+      "id": "income",
+      "category": "收入",
+      "object": "郵箱收成籃",
+      "fx": 0.58,
+      "fy": 0.52,
+      "sprite": "income_mail_basket",
+      "files": {
+        "idle": "hotspots/income_mail_basket_idle.png",
+        "pressed": "hotspots/income_mail_basket_pressed.png",
+        "active": "hotspots/income_mail_basket_active.png",
+        "hasEntry": "hotspots/income_mail_basket_hasEntry.png"
+      }
+    },
+    {
+      "id": "save",
+      "category": "儲蓄",
+      "object": "撲滿",
+      "fx": 0.72,
+      "fy": 0.62,
+      "sprite": "savings_piggy",
+      "files": {
+        "idle": "hotspots/savings_piggy_idle.png",
+        "pressed": "hotspots/savings_piggy_pressed.png",
+        "active": "hotspots/savings_piggy_active.png",
+        "hasEntry": "hotspots/savings_piggy_hasEntry.png"
+      }
+    },
+    {
+      "id": "other",
+      "category": "其他",
+      "object": "告示牌",
+      "fx": 0.82,
+      "fy": 0.72,
+      "sprite": "other_notice",
+      "files": {
+        "idle": "hotspots/other_notice_idle.png",
+        "pressed": "hotspots/other_notice_pressed.png",
+        "active": "hotspots/other_notice_active.png",
+        "hasEntry": "hotspots/other_notice_hasEntry.png"
+      }
+    }
+  ]
+}

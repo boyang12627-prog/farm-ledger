@@ -1,6 +1,7 @@
 {
   "phase": "A2c",
   "title": "可組裝 UI 元件包",
+  "commit_note": "aligned to docs/art/a2/hotspot_map.json fx/fy + eng id (food/transit/…)",
   "style": "暖色 SoS／半手繪自繪；禁止官方商標角色",
   "palette": {
     "wood": "#6B4A2E",
@@ -8,143 +9,192 @@
     "ink": "#3D2A1A",
     "stamp": "#C45C4A"
   },
+  "state_alias": {
+    "active": "hasEntry",
+    "hasEntry": "active"
+  },
+  "ranch": {
+    "base": "ranch/spring_ranch_base.png",
+    "filled_alt": "ranch/spring_ranch_iso_filled_alt.png",
+    "size_px": {
+      "w": 1280,
+      "h": 720
+    }
+  },
   "hotspots": [
     {
-      "id": "food_table",
+      "id": "food",
+      "sprite": "food_table",
       "category": "飲食",
       "label_zh": "餐桌灶",
+      "fx": 0.42,
+      "fy": 0.4,
       "files": {
         "idle": "hotspots/food_table_idle.png",
         "pressed": "hotspots/food_table_pressed.png",
+        "active": "hotspots/food_table_active.png",
         "hasEntry": "hotspots/food_table_hasEntry.png"
       },
       "anchor": {
-        "fx": 0.22,
-        "fy": 0.55,
+        "fx": 0.42,
+        "fy": 0.4,
         "suggested_width_dp": 72
       }
     },
     {
-      "id": "transport_bike",
+      "id": "transit",
+      "sprite": "transport_bike",
       "category": "交通",
       "label_zh": "小路單車",
+      "fx": 0.28,
+      "fy": 0.48,
       "files": {
         "idle": "hotspots/transport_bike_idle.png",
         "pressed": "hotspots/transport_bike_pressed.png",
+        "active": "hotspots/transport_bike_active.png",
         "hasEntry": "hotspots/transport_bike_hasEntry.png"
       },
       "anchor": {
-        "fx": 0.38,
-        "fy": 0.62,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "housing_porch",
-      "category": "住屋",
-      "label_zh": "門廊",
-      "files": {
-        "idle": "hotspots/housing_porch_idle.png",
-        "pressed": "hotspots/housing_porch_pressed.png",
-        "hasEntry": "hotspots/housing_porch_hasEntry.png"
-      },
-      "anchor": {
-        "fx": 0.62,
-        "fy": 0.38,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "daily_crates",
-      "category": "日用",
-      "label_zh": "木箱",
-      "files": {
-        "idle": "hotspots/daily_crates_idle.png",
-        "pressed": "hotspots/daily_crates_pressed.png",
-        "hasEntry": "hotspots/daily_crates_hasEntry.png"
-      },
-      "anchor": {
-        "fx": 0.78,
-        "fy": 0.52,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "fun_garden_pond",
-      "category": "娛樂",
-      "label_zh": "花圃魚塘",
-      "files": {
-        "idle": "hotspots/fun_garden_pond_idle.png",
-        "pressed": "hotspots/fun_garden_pond_pressed.png",
-        "hasEntry": "hotspots/fun_garden_pond_hasEntry.png"
-      },
-      "anchor": {
         "fx": 0.28,
-        "fy": 0.72,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "health_herbs",
-      "category": "健康",
-      "label_zh": "藥草",
-      "files": {
-        "idle": "hotspots/health_herbs_idle.png",
-        "pressed": "hotspots/health_herbs_pressed.png",
-        "hasEntry": "hotspots/health_herbs_hasEntry.png"
-      },
-      "anchor": {
-        "fx": 0.72,
-        "fy": 0.68,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "income_mail_basket",
-      "category": "收入",
-      "label_zh": "郵箱收成籃",
-      "files": {
-        "idle": "hotspots/income_mail_basket_idle.png",
-        "pressed": "hotspots/income_mail_basket_pressed.png",
-        "hasEntry": "hotspots/income_mail_basket_hasEntry.png"
-      },
-      "anchor": {
-        "fx": 0.82,
-        "fy": 0.36,
-        "suggested_width_dp": 72
-      }
-    },
-    {
-      "id": "savings_piggy",
-      "category": "儲蓄",
-      "label_zh": "撲滿",
-      "files": {
-        "idle": "hotspots/savings_piggy_idle.png",
-        "pressed": "hotspots/savings_piggy_pressed.png",
-        "hasEntry": "hotspots/savings_piggy_hasEntry.png"
-      },
-      "anchor": {
-        "fx": 0.48,
         "fy": 0.48,
         "suggested_width_dp": 72
       }
     },
     {
-      "id": "other_notice",
-      "category": "其他",
-      "label_zh": "告示牌",
+      "id": "home",
+      "sprite": "housing_porch",
+      "category": "住屋",
+      "label_zh": "門廊",
+      "fx": 0.55,
+      "fy": 0.36,
       "files": {
-        "idle": "hotspots/other_notice_idle.png",
-        "pressed": "hotspots/other_notice_pressed.png",
-        "hasEntry": "hotspots/other_notice_hasEntry.png"
+        "idle": "hotspots/housing_porch_idle.png",
+        "pressed": "hotspots/housing_porch_pressed.png",
+        "active": "hotspots/housing_porch_active.png",
+        "hasEntry": "hotspots/housing_porch_hasEntry.png"
       },
       "anchor": {
         "fx": 0.55,
-        "fy": 0.7,
+        "fy": 0.36,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "daily",
+      "sprite": "daily_crates",
+      "category": "日用",
+      "label_zh": "木箱",
+      "fx": 0.22,
+      "fy": 0.5,
+      "files": {
+        "idle": "hotspots/daily_crates_idle.png",
+        "pressed": "hotspots/daily_crates_pressed.png",
+        "active": "hotspots/daily_crates_active.png",
+        "hasEntry": "hotspots/daily_crates_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.22,
+        "fy": 0.5,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "fun",
+      "sprite": "fun_garden_pond",
+      "category": "娛樂",
+      "label_zh": "花圃魚塘",
+      "fx": 0.18,
+      "fy": 0.72,
+      "files": {
+        "idle": "hotspots/fun_garden_pond_idle.png",
+        "pressed": "hotspots/fun_garden_pond_pressed.png",
+        "active": "hotspots/fun_garden_pond_active.png",
+        "hasEntry": "hotspots/fun_garden_pond_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.18,
+        "fy": 0.72,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "health",
+      "sprite": "health_herbs",
+      "category": "健康",
+      "label_zh": "藥草",
+      "fx": 0.3,
+      "fy": 0.62,
+      "files": {
+        "idle": "hotspots/health_herbs_idle.png",
+        "pressed": "hotspots/health_herbs_pressed.png",
+        "active": "hotspots/health_herbs_active.png",
+        "hasEntry": "hotspots/health_herbs_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.3,
+        "fy": 0.62,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "income",
+      "sprite": "income_mail_basket",
+      "category": "收入",
+      "label_zh": "郵箱收成籃",
+      "fx": 0.58,
+      "fy": 0.52,
+      "files": {
+        "idle": "hotspots/income_mail_basket_idle.png",
+        "pressed": "hotspots/income_mail_basket_pressed.png",
+        "active": "hotspots/income_mail_basket_active.png",
+        "hasEntry": "hotspots/income_mail_basket_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.58,
+        "fy": 0.52,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "save",
+      "sprite": "savings_piggy",
+      "category": "儲蓄",
+      "label_zh": "撲滿",
+      "fx": 0.72,
+      "fy": 0.62,
+      "files": {
+        "idle": "hotspots/savings_piggy_idle.png",
+        "pressed": "hotspots/savings_piggy_pressed.png",
+        "active": "hotspots/savings_piggy_active.png",
+        "hasEntry": "hotspots/savings_piggy_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.72,
+        "fy": 0.62,
+        "suggested_width_dp": 72
+      }
+    },
+    {
+      "id": "other",
+      "sprite": "other_notice",
+      "category": "其他",
+      "label_zh": "告示牌",
+      "fx": 0.82,
+      "fy": 0.72,
+      "files": {
+        "idle": "hotspots/other_notice_idle.png",
+        "pressed": "hotspots/other_notice_pressed.png",
+        "active": "hotspots/other_notice_active.png",
+        "hasEntry": "hotspots/other_notice_hasEntry.png"
+      },
+      "anchor": {
+        "fx": 0.82,
+        "fy": 0.72,
         "suggested_width_dp": 72
       }
     }
   ],
+  "float_label": "sheets/floating_wood_sign.png",
   "topbar": [
     "topbar/season_stamp_spring.png",
     "topbar/weather_sunny.png",
@@ -188,9 +238,5 @@
     "overlays/grass_layer_2.png",
     "overlays/grass_layer_3.png",
     "overlays/stamp_sprout.png"
-  ],
-  "ranch": [
-    "ranch/spring_ranch_base.png",
-    "ranch/spring_ranch_iso_filled_alt.png"
   ]
 }
