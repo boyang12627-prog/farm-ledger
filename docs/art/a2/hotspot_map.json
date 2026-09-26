@@ -1,0 +1,87 @@
+{
+  "version": "A2b",
+  "ranch_asset": "spring_ranch_iso.png",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "style": "original isometric spring, GenerateImage + concept refs page-03/04",
+  "farmer": "original straw-hat overalls boy — no licensed SoS/HM characters",
+  "missed_overlay": "overlay_missed_grass.png",
+  "entry_clipboard": "entry_clipboard.png",
+  "hotspots_normalized": [
+    {
+      "id": "food",
+      "category": "飲食",
+      "object": "餐桌灶",
+      "fx": 0.42,
+      "fy": 0.4,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "transit",
+      "category": "交通",
+      "object": "小路單車",
+      "fx": 0.28,
+      "fy": 0.48,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "home",
+      "category": "住屋",
+      "object": "門廊",
+      "fx": 0.55,
+      "fy": 0.36,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "daily",
+      "category": "日用",
+      "object": "木箱",
+      "fx": 0.22,
+      "fy": 0.5,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "fun",
+      "category": "娛樂",
+      "object": "花圃魚塘",
+      "fx": 0.18,
+      "fy": 0.72,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "health",
+      "category": "健康",
+      "object": "藥草",
+      "fx": 0.3,
+      "fy": 0.62,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "income",
+      "category": "收入",
+      "object": "郵箱收成籃",
+      "fx": 0.58,
+      "fy": 0.52,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "save",
+      "category": "儲蓄",
+      "object": "撲滿",
+      "fx": 0.72,
+      "fy": 0.62,
+      "file": "spring_ranch_iso.png"
+    },
+    {
+      "id": "other",
+      "category": "其他",
+      "object": "告示牌",
+      "fx": 0.82,
+      "fy": 0.72,
+      "file": "spring_ranch_iso.png"
+    }
+  ],
+  "notes": "fx/fy are centers 0-1; eng should refine hitboxes. Preview: a2b_hotspots_preview.png"
+}
