@@ -91,6 +91,7 @@ fun FarmScreen(
         )
 
         Column(Modifier.fillMaxSize()) {
+            // seasonLine / weatherOrPhase → contentDescription only（頂欄圖 only；連續牌只 streak）
             RanchTopBar(
                 seasonLine = "春・第 ${gameDay.gameDay} 日",
                 weatherOrPhase = gameDay.phase.nameZh + "・" + caps.stage.nameZh,

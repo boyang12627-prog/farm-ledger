@@ -14,8 +14,8 @@ android {
         applicationId = "com.farmledger.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.5.4b-land"
+        versionCode = 5
+        versionName = "0.5.4c-top"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

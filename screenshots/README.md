@@ -10,6 +10,7 @@ Generated with **Paparazzi** (JVM Compose screenshots) — no emulator required.
 | `04_farm.png` | 農田 | 6 plots with mixed empty / growing / ready |
 | `05_ranch_a2c.png` | 牧場 A2c | Floating chips + hotspots (no permanent labels) |
 | `05b_ranch_landscape.png` | 牧場橫屏 | 1280×720 idle; no wood-sign row (spec §6) |
+| `05c_topbar_crop.png` | 頂欄裁切 | 季節／天氣＝圖 only；連續牌只 streak 短文；種子袋數字 |
 
 ## Regenerate
 
@@ -21,6 +22,8 @@ cp app/src/test/snapshots/images/*_03_settle.png screenshots/03_settle.png
 cp app/src/test/snapshots/images/*_04_farm.png screenshots/04_farm.png
 cp app/src/test/snapshots/images/*_05_ranch_a2c.png screenshots/05_ranch_a2c.png
 cp app/src/test/snapshots/images/*_05b_ranch_landscape.png screenshots/05b_ranch_landscape.png
+# Top-bar crop from landscape (new file; do not overwrite playable-v0.1)
+ffmpeg -y -i screenshots/05b_ranch_landscape.png -vf "crop=iw:ih*0.14:0:0" screenshots/05c_topbar_crop.png
 ```
 
 Test source: `app/src/test/java/com/farmledger/app/ui/screenshot/ScreenScreenshotTest.kt`

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.farmledger.app.R
@@ -30,6 +31,9 @@ private val Ink = Color(0xFF3D2A1A)
 /**
  * A2c 橫屏頂欄：浮空 chip 左右分（季節／天氣｜連續｜種子幣｜設定），
  * **唔做通欄實心條**；真帳 HKD 唔出現喺牧場 HUD（見 A2c_landscape_label_spec §4）。
+ *
+ * 季節章／天氣 = 圖 only（contentDescription 做 a11y）；連續牌只顯示 streak 短文；
+ * 種子袋保留數字。
  */
 @Composable
 fun RanchTopBar(
@@ -47,7 +51,7 @@ fun RanchTopBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 左：季節章＋天氣（浮空）
+        // 左：季節章＋天氣（浮空，圖 only）
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -60,45 +64,46 @@ fun RanchTopBar(
                     contentScale = ContentScale.Fit
                 )
             }
-            Box(Modifier.size(36.dp), contentAlignment = Alignment.BottomCenter) {
+            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
                 Image(
                     painterResource(R.drawable.topbar_weather_sunny),
                     contentDescription = weatherOrPhase,
                     modifier = Modifier.size(32.dp),
                     contentScale = ContentScale.Fit
                 )
-                Text(
-                    weatherOrPhase.take(2),
-                    color = Ink,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
 
-        // 中：連續日記牌（weight，唔填實心底）
+        // 中：連續日記牌（只 streak 短文，唔塞 seasonLine）
         Box(
             Modifier
                 .weight(1f)
-                .height(40.dp),
+                .height(48.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painterResource(R.drawable.topbar_streak_plaque),
                 contentDescription = "連續記帳",
-                modifier = Modifier.width(200.dp).height(40.dp),
-                contentScale = ContentScale.Fit
+                // Asset is tall (320×250); Fit would shrink it to ~56dp wide and
+                // leave Compose Text outside the visible wood — stretch to fill.
+                modifier = Modifier.width(260.dp).height(48.dp),
+                contentScale = ContentScale.FillBounds
             )
             Text(
-                "連 $streakDays・$seasonLine",
+                text = "連續 $streakDays 日",
                 color = Ink,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
-                maxLines = 1
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                lineHeight = 13.sp,
+                modifier = Modifier
+                    .width(220.dp)
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
             )
         }
 
-        // 右：種子幣袋（只種子幣）
+        // 右：種子幣袋（只種子幣數字）
         Box(Modifier.width(56.dp).height(44.dp), contentAlignment = Alignment.Center) {
             Image(
                 painterResource(R.drawable.topbar_seed_coin_pouch),
