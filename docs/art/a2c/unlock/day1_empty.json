@@ -1,0 +1,80 @@
+{
+  "version": "A2c-day1-empty",
+  "aliases": [
+    "day1_bare",
+    "a2c_day1_bare_ranch"
+  ],
+  "orientation": "landscape",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "rule": "開局淨農地：零熱區。物件＝商店上架日已到 AND 玩家已用種子幣購買／建造 先渲染；未買＝完全唔繪、唔灰桩、唔木牌。",
+  "ranch_asset": "ranch/spring_ranch_bare_day1.png",
+  "visible_hotspots_default": [],
+  "previews": [
+    "previews/a2c_day1_bare_ranch.jpg",
+    "previews/a2c_day1_bare_ranch.png",
+    "previews/a2c_day1_bare_ranch_safezones.jpg"
+  ],
+  "deprecated_as_day1_acceptance": "previews/a2c_day1_sparse_ranch.jpg（1b51e5e 三件預擺）— 唔再做開局驗收準繩",
+  "render_gate": {
+    "show_sprite_when": [
+      "shop_unlocked_for_day",
+      "owned_or_built"
+    ],
+    "hide_when_locked_or_unowned": true
+  },
+  "build_order": [
+    {
+      "id": "home",
+      "sprite": "housing_porch",
+      "shop_day": 1,
+      "note": "第一件可買"
+    },
+    {
+      "id": "food",
+      "sprite": "food_table",
+      "shop_day": 1,
+      "note": "home 之後可買"
+    },
+    {
+      "id": "income",
+      "sprite": "income_mail_basket",
+      "shop_day": 1,
+      "note": "home 之後可買"
+    },
+    {
+      "id": "daily",
+      "sprite": "daily_crates",
+      "shop_day": 3
+    },
+    {
+      "id": "transit",
+      "sprite": "transport_bike",
+      "shop_day": 5
+    },
+    {
+      "id": "save",
+      "sprite": "savings_piggy",
+      "shop_day": 7
+    },
+    {
+      "id": "fun",
+      "sprite": "fun_garden_pond",
+      "shop_day": 10
+    },
+    {
+      "id": "health",
+      "sprite": "health_herbs",
+      "shop_day": 12
+    },
+    {
+      "id": "other",
+      "sprite": "other_notice",
+      "shop_day": 14
+    }
+  ],
+  "coords": "hotspot_map.json",
+  "label_policy": "A2c_landscape_label_spec.md"
+}

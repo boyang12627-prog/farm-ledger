@@ -1,5 +1,5 @@
 {
-  "version": "A2c-day1-sparse",
+  "version": "A2c-post-purchase-starter-ref",
   "orientation": "landscape",
   "base": "ranch/spring_ranch_base.png",
   "size_px": {
@@ -83,5 +83,8 @@
     "previews/a2c_day1_sparse_ranch.jpg",
     "previews/a2c_day1_sparse_annotated.jpg"
   ],
-  "label_policy": "A2c_landscape_label_spec.md — 默認無字"
+  "label_policy": "A2c_landscape_label_spec.md — 默認無字",
+  "status": "NOT_day1_opening",
+  "note": "舊三件起步預覽；開局驗收改用 day1_empty／bare。本檔僅作「已買 home+food+income 後」視覺參考。",
+  "opening": "day1_empty.json"
 }

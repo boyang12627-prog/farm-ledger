@@ -60,3 +60,13 @@
 ## Day1 淨空農地
 
 開局用 `unlock/DAY1_BARE.md`／`previews/a2c_day1_bare_ranch.jpg`（零物件）。sparse 係買起步件後。
+
+
+---
+
+## 開局淨農地（鎖死 2026-09-26）
+
+- **開局驗收：** `unlock/DAY1_EMPTY.md`＋`previews/a2c_day1_bare_ranch.jpg`＋`ranch/spring_ranch_bare_day1.png`
+- **Gating：** `unlock/day1_empty.json`（上架日＋已購買先渲染）
+- **第一件 home：** `previews/a2c_first_building_home.jpg`＋`unlock/first_building_home.json`
+- **否決：** `a2c_day1_sparse_ranch` 三件預擺唔再做開局準繩

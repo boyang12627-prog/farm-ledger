@@ -1,0 +1,16 @@
+{
+  "version": "A2c-first-building-home",
+  "base": "ranch/spring_ranch_bare_day1.png",
+  "owned": [
+    "home"
+  ],
+  "visible": [
+    {
+      "id": "home",
+      "sprite": "housing_porch",
+      "fx": 0.55,
+      "fy": 0.36
+    }
+  ],
+  "preview": "previews/a2c_first_building_home.jpg"
+}
