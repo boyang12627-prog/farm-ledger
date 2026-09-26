@@ -11,12 +11,12 @@
 | 前身 M4 | `7f91786`／gate `c5432a7` |
 | 分支 | `main` |
 
-## M5.1 進行中／已落地（多帳戶＋A1）
+## M5.1／A2b 已落地（多帳戶＋紙感＋等距牧場）
 
-- 多帳戶新增／改名；入帳轉帳（單筆 TRANSFER：由→到）
-- A1 `spring_ranch_base`＋九熱區；漏記長草；底欄 A1 nav＋中央＋
-- 入帳木夾板流（類型／HK$／分類格／帳戶 pill／記入牧場）
-- versionName `0.5.1-m5`
+- 多帳戶新增／改名；入帳轉帳（單筆 TRANSFER：由→到）；儲蓄熱區預填轉帳
+- A2b `spring_ranch_iso`（1280×720）＋`hotspot_map.json` 正規化九熱區；漏記＝`overlay_missed_grass`
+- 入帳／帳簿／日記：A2 `entry_clipboard`／`ledger_paper`／`diary_*` 紙感（木／奶油／印章紅）
+- versionName `0.5.2-m5`
 
 ## M5 已落地
 

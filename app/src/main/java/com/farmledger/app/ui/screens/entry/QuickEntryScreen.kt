@@ -1,5 +1,6 @@
 package com.farmledger.app.ui.screens.entry
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,27 +36,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.farmledger.app.R
 import com.farmledger.app.domain.model.DefaultAccounts
 import com.farmledger.app.domain.model.EntryType
 import com.farmledger.app.domain.model.LedgerAccount
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.usecase.EntryPrefillLogic
 import com.farmledger.app.ui.AppViewModel
-import com.farmledger.app.ui.screens.ledger.formatMinor
 import com.farmledger.app.ui.theme.FarmBg
 import com.farmledger.app.ui.theme.FarmSelected
 import com.farmledger.app.ui.theme.FarmSoil
 import com.farmledger.app.ui.theme.FarmStroke
 import com.farmledger.app.ui.theme.FarmText
 
-private val ClipBoard = Color(0xFFC4A574)
 private val Parchment = Color(0xFFF5E6C8)
 private val WoodBtn = Color(0xFF8B6914)
 private val WoodBtnSel = Color(0xFF6B4A2E)
@@ -115,19 +117,25 @@ fun QuickEntryScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // 木夾板卡
-        Column(
+        // A2 木夾板：entry_clipboard 做背景，保留 Compose 入帳功能
+        Box(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(ClipBoard)
-                .padding(10.dp)
+                .border(2.dp, WoodBtnSel, RoundedCornerShape(16.dp))
         ) {
+            Image(
+                painter = painterResource(R.drawable.entry_clipboard),
+                contentDescription = "木夾板",
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .padding(12.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Parchment)
+                    .background(Parchment.copy(alpha = 0.92f))
                     .border(1.5.dp, FarmStroke, RoundedCornerShape(12.dp))
                     .padding(16.dp)
             ) {

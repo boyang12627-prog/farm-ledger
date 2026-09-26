@@ -1,7 +1,11 @@
 package com.farmledger.app.ui.screens.ledger
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,9 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -31,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,14 +46,18 @@ import androidx.compose.ui.unit.dp
 import com.farmledger.app.R
 import com.farmledger.app.domain.model.EntryStatus
 import com.farmledger.app.domain.model.EntryType
-import com.farmledger.app.domain.model.LedgerAccount
 import com.farmledger.app.domain.model.LedgerCategory
 import com.farmledger.app.domain.model.LedgerEntry
 import com.farmledger.app.ui.AppViewModel
 import com.farmledger.app.ui.theme.FarmExpense
+import com.farmledger.app.ui.theme.FarmGrowth
 import com.farmledger.app.ui.theme.FarmIncome
 import com.farmledger.app.ui.theme.FarmSoil
+import com.farmledger.app.ui.theme.FarmStroke
 import com.farmledger.app.ui.theme.FarmText
+
+private val Parchment = Color(0xFFF5E6C8)
+private val StampRed = Color(0xFFC45C4A)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +68,7 @@ fun LedgerScreen(
 ) {
     val all by vm.allEntries.collectAsState()
     val accounts by vm.accounts.collectAsState()
+    val progress by vm.progress.collectAsState()
     val message by vm.message.collectAsState()
     var query by remember { mutableStateOf("") }
     var editingId by remember { mutableStateOf<String?>(null) }
@@ -67,6 +79,15 @@ fun LedgerScreen(
     }
     val filtered = remember(all, query, accountNames) {
         filterEntries(all, query, accountNames)
+    }
+    val hkdBalanceMinor = remember(all) {
+        all.filter { it.status == EntryStatus.ACTIVE }.sumOf { e ->
+            when (e.type) {
+                EntryType.INCOME -> e.amountMinor
+                EntryType.EXPENSE -> -e.amountMinor
+                EntryType.TRANSFER, EntryType.NO_TRADE -> 0L
+            }
+        }
     }
 
     if (showEditor) {
@@ -82,12 +103,17 @@ fun LedgerScreen(
     }
 
     Scaffold(
+        containerColor = Parchment,
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                editingId = null
-                showEditor = true
-                onAdd()
-            }) {
+            FloatingActionButton(
+                onClick = {
+                    editingId = null
+                    showEditor = true
+                    onAdd()
+                },
+                containerColor = StampRed,
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "新增")
             }
         }
@@ -98,8 +124,85 @@ fun LedgerScreen(
                 .padding(pad)
                 .padding(16.dp)
         ) {
-            Text("帳簿", style = MaterialTheme.typography.headlineMedium, color = FarmText)
-            Text("真港幣跨日列表 · 商店買賣唔在此", style = MaterialTheme.typography.bodySmall, color = FarmSoil)
+            // A2 奶油木框紙感頂部
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(2.dp, FarmStroke, RoundedCornerShape(12.dp))
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ledger_paper),
+                    contentDescription = "帳簿紙",
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Parchment.copy(alpha = 0.88f))
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        "帳簿",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = FarmText,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "真港幣跨日列表 · 商店買賣唔在此",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FarmSoil
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    // HK$ 與種子幣必須分欄（鐵則）
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.65f))
+                                .border(1.dp, FarmStroke, RoundedCornerShape(10.dp))
+                                .padding(10.dp)
+                        ) {
+                            Text("港幣 HKD", style = MaterialTheme.typography.labelSmall, color = FarmSoil)
+                            Text(
+                                "HK$${formatMinor(hkdBalanceMinor)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = FarmText
+                            )
+                        }
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.65f))
+                                .border(1.dp, FarmStroke, RoundedCornerShape(10.dp))
+                                .padding(10.dp)
+                        ) {
+                            Text("種子幣（≠HKD）", style = MaterialTheme.typography.labelSmall, color = FarmSoil)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painterResource(R.drawable.ic_seed),
+                                    contentDescription = "種子幣",
+                                    modifier = Modifier.size(18.dp),
+                                    contentScale = ContentScale.FillBounds
+                                )
+                                Text(
+                                    " ${progress.seedCoins}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FarmGrowth
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = query,
@@ -110,9 +213,13 @@ fun LedgerScreen(
             )
             TextButton(onClick = onOpenSettings) { Text("設定／匯出") }
             message?.let { msg ->
-                Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                Card(
+                    Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Parchment),
+                    border = BorderStroke(1.dp, FarmStroke)
+                ) {
                     Column(Modifier.padding(12.dp)) {
-                        Text(msg, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                        Text(msg, fontWeight = FontWeight.Medium, color = FarmText)
                         TextButton(onClick = { vm.consumeMessage() }) { Text("清除提示") }
                     }
                 }
@@ -126,7 +233,9 @@ fun LedgerScreen(
                                 showEditor = true
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.82f)),
+                        border = BorderStroke(1.dp, FarmStroke)
                     ) {
                         Column(Modifier.padding(12.dp)) {
                             Text(e.localDate, style = MaterialTheme.typography.labelMedium, color = FarmSoil)
@@ -167,9 +276,9 @@ fun LedgerScreen(
                                 Text(
                                     when (e.type) {
                                         EntryType.NO_TRADE -> "—"
-                                        EntryType.INCOME -> "+$${formatMinor(e.amountMinor)}"
-                                        EntryType.EXPENSE -> "-$${formatMinor(e.amountMinor)}"
-                                        EntryType.TRANSFER -> "↔$${formatMinor(e.amountMinor)}"
+                                        EntryType.INCOME -> "+HK$${formatMinor(e.amountMinor)}"
+                                        EntryType.EXPENSE -> "-HK$${formatMinor(e.amountMinor)}"
+                                        EntryType.TRANSFER -> "↔HK$${formatMinor(e.amountMinor)}"
                                     },
                                     color = amountColor(e.type),
                                     fontWeight = FontWeight.Bold
