@@ -1,0 +1,21 @@
+{
+  "version": "0.5.4f",
+  "ranch_asset": "ranch/spring_ranch_compose_clear_day1.png",
+  "north_star": "docs/art/ref_user/composition_lock_2026-09-26.png",
+  "visible_hotspots": [],
+  "render_gate": "shop_day_reached AND owned",
+  "hotspot_map": "hotspot_map_user_composition.json",
+  "previews": [
+    "previews/a2c_spring_ranch_compose_clear_day1.jpg",
+    "previews/a2c_compose_clear_day1_with_chrome.jpg"
+  ],
+  "composition_must_keep": [
+    "fence",
+    "path",
+    "sakura",
+    "stream",
+    "hills",
+    "landscape chrome via Compose"
+  ],
+  "retired_as_north_star": "ranch/spring_ranch_bare_day1.png"
+}

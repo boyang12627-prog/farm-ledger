@@ -70,3 +70,10 @@
 - **Gating：** `unlock/day1_empty.json`（上架日＋已購買先渲染）
 - **第一件 home：** `previews/a2c_first_building_home.jpg`＋`unlock/first_building_home.json`
 - **否決：** `a2c_day1_sparse_ranch` 三件預擺唔再做開局準繩
+
+
+---
+
+## 用戶構圖北極星
+
+見 `unlock/DAY1_USER_COMPOSITION.md`；開局 bare＝`a2c_day1_bare_in_user_composition`。

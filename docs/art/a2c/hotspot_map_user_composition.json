@@ -1,0 +1,77 @@
+{
+  "version": "A2c-compose-clear-day1",
+  "north_star": "docs/art/ref_user/composition_lock_2026-09-26.png",
+  "ranch_asset": "ranch/spring_ranch_compose_clear_day1.png",
+  "size_px": {
+    "w": 1280,
+    "h": 720
+  },
+  "orientation": "landscape",
+  "day1_visible_hotspots": [],
+  "note": "場內零預擺；頂底欄由 Compose 叠，唔燒入底圖",
+  "hotspots_normalized": [
+    {
+      "id": "food",
+      "sprite": "food_table",
+      "object": "餐桌灶",
+      "fx": 0.4,
+      "fy": 0.46
+    },
+    {
+      "id": "home",
+      "sprite": "housing_porch",
+      "object": "門廊",
+      "fx": 0.54,
+      "fy": 0.4
+    },
+    {
+      "id": "income",
+      "sprite": "income_mail_basket",
+      "object": "郵箱收成籃",
+      "fx": 0.6,
+      "fy": 0.52
+    },
+    {
+      "id": "daily",
+      "sprite": "daily_crates",
+      "object": "木箱",
+      "fx": 0.28,
+      "fy": 0.55
+    },
+    {
+      "id": "transit",
+      "sprite": "transport_bike",
+      "object": "單車",
+      "fx": 0.32,
+      "fy": 0.62
+    },
+    {
+      "id": "fun",
+      "sprite": "fun_garden_pond",
+      "object": "花圃魚塘",
+      "fx": 0.22,
+      "fy": 0.68
+    },
+    {
+      "id": "health",
+      "sprite": "health_herbs",
+      "object": "藥草",
+      "fx": 0.7,
+      "fy": 0.58
+    },
+    {
+      "id": "save",
+      "sprite": "savings_piggy",
+      "object": "撲滿",
+      "fx": 0.48,
+      "fy": 0.58
+    },
+    {
+      "id": "other",
+      "sprite": "other_notice",
+      "object": "告示牌",
+      "fx": 0.75,
+      "fy": 0.65
+    }
+  ]
+}

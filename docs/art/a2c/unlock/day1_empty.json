@@ -10,12 +10,11 @@
     "h": 720
   },
   "rule": "開局淨農地：零熱區。物件＝商店上架日已到 AND 玩家已用種子幣購買／建造 先渲染；未買＝完全唔繪、唔灰桩、唔木牌。",
-  "ranch_asset": "ranch/spring_ranch_bare_day1.png",
+  "ranch_asset": "ranch/spring_ranch_compose_clear_day1.png",
   "visible_hotspots_default": [],
   "previews": [
-    "previews/a2c_day1_bare_ranch.jpg",
-    "previews/a2c_day1_bare_ranch.png",
-    "previews/a2c_day1_bare_ranch_safezones.jpg"
+    "previews/a2c_spring_ranch_compose_clear_day1.jpg",
+    "previews/a2c_compose_clear_day1_with_chrome.jpg"
   ],
   "deprecated_as_day1_acceptance": "previews/a2c_day1_sparse_ranch.jpg（1b51e5e 三件預擺）— 唔再做開局驗收準繩",
   "render_gate": {
@@ -76,5 +75,9 @@
     }
   ],
   "coords": "hotspot_map.json",
-  "label_policy": "A2c_landscape_label_spec.md"
+  "label_policy": "A2c_landscape_label_spec.md",
+  "ranch_asset_legacy_flat": "ranch/spring_ranch_bare_day1.png",
+  "north_star": "docs/art/ref_user/composition_lock_2026-09-26.png",
+  "hotspot_map": "hotspot_map_user_composition.json",
+  "eng_alias": "unlock/compose_clear_day1.json"
 }
