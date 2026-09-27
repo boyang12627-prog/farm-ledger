@@ -217,6 +217,51 @@ class ScreenScreenshotTest {
         }
     }
 
+
+    @Test
+    fun ranchComposeClearDay1() {
+        paparazzi.unsafeUpdateConfig(
+            deviceConfig = DeviceConfig.PIXEL_5.copy(
+                softButtons = false,
+                screenWidth = 1280,
+                screenHeight = 720,
+                orientation = ScreenOrientation.LANDSCAPE
+            )
+        )
+        paparazzi.snapshot(name = "05f_ranch_compose_clear") {
+            FarmLedgerTheme { RanchComposeClearDay1Fixture() }
+        }
+    }
+
+    @Test
+    fun topBarDayPlaque05f() {
+        paparazzi.unsafeUpdateConfig(
+            deviceConfig = DeviceConfig.PIXEL_5.copy(
+                softButtons = false,
+                screenWidth = 1280,
+                screenHeight = 160,
+                orientation = ScreenOrientation.LANDSCAPE
+            )
+        )
+        paparazzi.snapshot(name = "05f_topbar_day") {
+            FarmLedgerTheme {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFB8D4A8))
+                ) {
+                    RanchTopBar(
+                        seasonLine = "春・第 1 日",
+                        weatherOrPhase = "晨・荒地",
+                        ranchDay = 1,
+                        seedCoins = 20,
+                        onOpenSettings = {}
+                    )
+                }
+            }
+        }
+    }
+
     @Test
     fun farm() {
         paparazzi.snapshot(name = "04_farm") {
@@ -854,6 +899,39 @@ private fun RanchSparseDay1Fixture() {
 @Composable
 private fun RanchBareDay1Fixture() {
     // 0.5.4e-bare：Day1 淨農地 — visibleHotspots=empty
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFB8D4A8))
+    ) {
+        RanchTopBar(
+            seasonLine = "春・第 1 日",
+            weatherOrPhase = "晨・荒地",
+            ranchDay = 1,
+            seedCoins = 20,
+            onOpenSettings = {}
+        )
+        RanchHotspotScene(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            ownedHotspotIds = emptySet(),
+            totalSettleDays = 0,
+            hasReconcileSuccess = false,
+            missedCategories = emptySet(),
+            weedStacks = emptyMap(),
+            loggedToday = emptySet(),
+            activeAccountCount = 2,
+            showHotspotLabels = false,
+            onHotspotTap = {}
+        )
+    }
+}
+
+@Composable
+private fun RanchComposeClearDay1Fixture() {
+    // 0.5.4f-compose：用戶構圖清空底 — Day1 zero hotspots
     Column(
         Modifier
             .fillMaxSize()

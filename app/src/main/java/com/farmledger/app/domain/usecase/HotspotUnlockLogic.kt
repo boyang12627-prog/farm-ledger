@@ -8,7 +8,7 @@ import com.farmledger.app.domain.model.LedgerEntry
 /**
  * 熱區地圖捷徑可見性（≠入帳分類可用性）。
  *
- * **鐵則（0.5.4e-bare／day1_empty.json）**：
+ * **鐵則（0.5.4f-compose／compose_clear_day1.json）**：
  * `show = shop_day_reached AND owned`；否則 [HotspotUnlockMode.HIDDEN]
  * （唔畫、唔灰桩、無大木牌牆）。分類仍可經底欄「入帳」完整選。
  *

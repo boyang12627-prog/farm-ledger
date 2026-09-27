@@ -51,10 +51,10 @@ private const val SpriteScale = 0.14f
 private const val WhisperLongPressMs = 400L
 
 /**
- * A2c 可組裝牧場（橫屏）：`spring_ranch_bare_day1`＋熱區三態 drawable
+ * A2c 可組裝牧場（橫屏）：`spring_ranch_compose_clear_day1`＋熱區三態 drawable
  * ＋ grass_layer 堆疊。默認**無常駐木牌**；長按出 whisper tip（同時最多 1）。
- * 可見性＝shop_day_reached AND owned（[HotspotUnlockLogic]／day1_empty.json）；
- * 開局 owned 空＝淨農地，唔畫灰桩。
+ * 可見性＝shop_day_reached AND owned（[HotspotUnlockLogic]／compose_clear_day1.json）；
+ * 開局 owned 空＝構圖清空場（欄／徑／櫻／溪／山），唔畫灰桩。
  */
 @Composable
 fun RanchHotspotScene(
@@ -100,8 +100,8 @@ fun RanchHotspotScene(
         val grassDp = spriteDp * 1.05f
 
         Image(
-            painter = painterResource(R.drawable.spring_ranch_bare_day1),
-            contentDescription = "春季牧場（淨農地）",
+            painter = painterResource(R.drawable.spring_ranch_compose_clear_day1),
+            contentDescription = "春季牧場（構圖清空）",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillBounds
         )
@@ -350,15 +350,15 @@ data class RanchHotspot(
     val fy: Float,
 )
 
-/** A2c／A2 鎖定熱區座標（docs/art/a2c/hotspot_map.json＝a2 同款 fx/fy） */
+/** A2c 用戶構圖錨點（docs/art/a2c/hotspot_map_user_composition.json） */
 val RanchHotspots: List<RanchHotspot> = listOf(
-    RanchHotspot(LedgerCategory.FOOD, 0.42f, 0.40f),
-    RanchHotspot(LedgerCategory.TRANSPORT, 0.28f, 0.48f),
-    RanchHotspot(LedgerCategory.HOUSING, 0.55f, 0.36f),
-    RanchHotspot(LedgerCategory.DAILY, 0.22f, 0.50f),
-    RanchHotspot(LedgerCategory.ENTERTAINMENT, 0.18f, 0.72f),
-    RanchHotspot(LedgerCategory.HEALTH, 0.30f, 0.62f),
-    RanchHotspot(LedgerCategory.INCOME, 0.58f, 0.52f),
-    RanchHotspot(LedgerCategory.SAVINGS, 0.72f, 0.62f),
-    RanchHotspot(LedgerCategory.OTHER, 0.82f, 0.72f),
+    RanchHotspot(LedgerCategory.FOOD, 0.40f, 0.46f),
+    RanchHotspot(LedgerCategory.TRANSPORT, 0.32f, 0.62f),
+    RanchHotspot(LedgerCategory.HOUSING, 0.54f, 0.40f),
+    RanchHotspot(LedgerCategory.DAILY, 0.28f, 0.55f),
+    RanchHotspot(LedgerCategory.ENTERTAINMENT, 0.22f, 0.68f),
+    RanchHotspot(LedgerCategory.HEALTH, 0.70f, 0.58f),
+    RanchHotspot(LedgerCategory.INCOME, 0.60f, 0.52f),
+    RanchHotspot(LedgerCategory.SAVINGS, 0.48f, 0.58f),
+    RanchHotspot(LedgerCategory.OTHER, 0.75f, 0.65f),
 )

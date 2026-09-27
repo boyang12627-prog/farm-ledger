@@ -5,7 +5,7 @@ import com.farmledger.app.domain.model.LedgerCategory
 /**
  * 牧場建造商店（種子幣；≠港幣帳）。
  *
- * 渲染鐵則（day1_empty.json）：
+ * 渲染鐵則（compose_clear_day1.json／day1_empty）：
  * `show = shop_day_reached AND owned`；否則完全隱藏（唔灰桩）。
  *
  * 日程／日結只控**上架**；場上可見唔因日子自動浮現。
@@ -56,7 +56,7 @@ object RanchBuildShopLogic {
     fun isOwned(id: String, ownedIds: Set<String>): Boolean = id in ownedIds
 
     /**
-     * 上架日／條件已到（唔理擁有）。對齊策劃鎖死表＋day1_empty build_order。
+     * 上架日／條件已到（唔理擁有）。對齊策劃鎖死表＋compose_clear／day1_empty build_order。
      */
     fun shopDayReached(id: String, ctx: ShopContext): Boolean = when (id) {
         "home" -> ctx.totalSettleDays >= 1

@@ -47,7 +47,7 @@ import kotlinx.coroutines.delay
 private val SoftRanchSky = Color(0xFFB8D4A8)
 
 /**
- * 預設牧場主畫面＝全屏 A2c 橫屏組裝（浮空頂欄 chip＋淨農地底圖）。
+ * 預設牧場主畫面＝全屏 A2c 橫屏組裝（浮空頂欄 chip＋用戶構圖清空底圖）。
  * 開局 owned 空＝零熱區；建造商店日結後開門。
  * 舊一日循環種田殼已搬去 [LegacyFarmDayLoopScreen]。
  */
@@ -110,7 +110,7 @@ fun FarmScreen(
             .background(SoftRanchSky)
     ) {
         Image(
-            painter = painterResource(R.drawable.spring_ranch_bare_day1),
+            painter = painterResource(R.drawable.spring_ranch_compose_clear_day1),
             contentDescription = null,
             modifier = Modifier.fillMaxSize().alpha(0.35f),
             contentScale = ContentScale.Crop
